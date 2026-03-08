@@ -2,12 +2,38 @@ const asyncHandler = require('../middleware/asyncHandler');
 const { User } = require('../models');
 
 exports.register = asyncHandler(async (req, res) => {
-  const { username, email, password, firstName, lastName } = req.body;
+  const { username, email, password, name, mobile } = req.body;
+
+  // Split name into firstName and lastName if name is provided
+  let firstName = '';
+  let lastName = '';
+  if (name) {
+    const nameParts = name.trim().split(/\s+/);
+    firstName = nameParts[0];
+    lastName = nameParts.slice(1).join(' ');
+  }
+
+  // Map mobile to phone
+  const phone = mobile;
+
+  if (!username || !email || !password) {
+    return res.status(400).json({ success: false, error: 'Please provide username, email and password' });
+  }
+
   const existingUser = await User.findOne({ $or: [{ email }, { username }] });
   if (existingUser) {
     return res.status(400).json({ success: false, error: 'User already exists' });
   }
-  const user = await User.create({ username, email, password, firstName, lastName });
+
+  const user = await User.create({ 
+    username, 
+    email, 
+    password, 
+    firstName, 
+    lastName, 
+    phone 
+  });
+
   const token = user.getSignedToken();
   res.status(201).json({ success: true, token, user: user.getPublicProfile() });
 });

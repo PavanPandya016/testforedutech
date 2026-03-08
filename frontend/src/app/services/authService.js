@@ -6,7 +6,7 @@ import { api } from './api/api';
 export const authService = {
   /**
    * Registers a new user.
-   * @param {Object} userData { name, email, password }
+   * @param {Object} userData { username, name, email, password, mobile }
    */
   register: async (userData) => {
     try {

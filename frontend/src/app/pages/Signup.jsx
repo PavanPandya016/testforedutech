@@ -17,6 +17,7 @@ export default function Signup() {
     setSignupError('');
     try {
       await authService.register({
+        username: data.username,
         name: data.fullName,
         email: data.email,
         password: data.password,
@@ -159,6 +160,25 @@ export default function Signup() {
                     placeholder="Enter your full name"
                   />
                   {errors.fullName && <p className="text-red-500 text-xs mt-1">{errors.fullName.message}</p>}
+                </div>
+
+                {/* Username */}
+                <div className="form-field">
+                  <label htmlFor="username" className="block font-['Public_Sans:SemiBold',sans-serif] font-semibold text-[14px] md:text-[16px] text-[#1b1d1f] mb-3">
+                    <span className="text-[#d91e63]">*</span> Username
+                  </label>
+                  <input
+                    type="text"
+                    id="username"
+                    {...register('username', { required: 'Username is required' })}
+                    onFocus={() => setFocusedField('username')}
+                    onBlur={() => setFocusedField(null)}
+                    className={`w-full px-5 py-4 border-2 rounded-xl font-['Public_Sans:Regular',sans-serif] text-[14px] md:text-[16px] text-[#363a3d] transition-all duration-300 ${
+                      focusedField === 'username' ? 'border-[#14627a] bg-[#f0f9fc]' : 'border-[#e7e9eb] bg-white hover:border-[#14627a]/50'
+                    } ${errors.username ? 'border-red-500' : ''} focus:outline-none`}
+                    placeholder="Enter a unique username"
+                  />
+                  {errors.username && <p className="text-red-500 text-xs mt-1">{errors.username.message}</p>}
                 </div>
 
                 {/* Email */}
