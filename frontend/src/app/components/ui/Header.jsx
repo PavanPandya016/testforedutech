@@ -44,6 +44,7 @@ export default function Header() {
   const navigate = useNavigate();
   const [isMenuOpen, setIsMenuOpen] = useState(false);
   const [isLoggedIn, setIsLoggedIn] = useState(false);
+  const [isAdmin, setIsAdmin] = useState(false);
   const [userName, setUserName] = useState("");
 
   /* =========================
@@ -63,6 +64,7 @@ export default function Header() {
   useEffect(() => {
     const user = authService.getCurrentUser();
     setIsLoggedIn(!!user);
+    setIsAdmin(user?.role === 'admin' || user?.role === 'instructor');
     const name = user?.name || (user?.email ? user.email.split('@')[0] : "User");
     setUserName(typeof name === 'string' ? name : "User");
   }, [location.pathname]);
@@ -141,6 +143,28 @@ export default function Header() {
                 </Link>
               </motion.div>
             ))}
+            {isAdmin && (
+              <motion.div
+                initial={{ opacity: 0, y: -10 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{
+                  delay: baseLinks.length * 0.05,
+                  type: "spring",
+                  stiffness: 300,
+                }}
+              >
+                <Link
+                  to="/admin"
+                  className={`px-5 py-2 rounded-lg transition-all ${
+                    isActive("/admin")
+                      ? "bg-[#14627a] text-white"
+                      : "text-red-600 font-bold hover:bg-red-50"
+                  }`}
+                >
+                  Admin
+                </Link>
+              </motion.div>
+            )}
           </div>
 
           {/* =========================
@@ -219,6 +243,18 @@ export default function Header() {
                   {link.label}
                 </Link>
               ))}
+              {isAdmin && (
+                <Link
+                  to="/admin"
+                  className={`block px-4 py-3 rounded-lg font-bold ${
+                    isActive("/admin")
+                      ? "bg-[#14627a] text-white"
+                      : "text-red-600 hover:bg-red-50"
+                  }`}
+                >
+                  Admin Panel
+                </Link>
+              )}
 
               <div className="pt-4 border-t">
                 {!isLoggedIn ? (

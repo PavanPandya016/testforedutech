@@ -15,6 +15,7 @@ const courseRoutes = require('./routes/courseRoutes');
 const eventRoutes = require('./routes/eventRoutes');
 const blogRoutes = require('./routes/blogRoutes');
 const categoryRoutes = require('./routes/categoryRoutes');
+const adminRoutes = require('./routes/adminRoutes');
 
 const app = express();
 
@@ -167,7 +168,8 @@ app.get('/', (req, res) => {
       courses: '/api/courses',
       events: '/api/events',
       blog: '/api/blog',
-      admin: '/admin',
+      admin: '/api/admin',
+      adminLegacy: '/admin',
       adminPanel: '/admin-panel'
     }
   });
@@ -178,6 +180,7 @@ app.use('/api/courses', courseRoutes);
 app.use('/api/events', eventRoutes);
 app.use('/api/blog', blogRoutes);
 app.use('/api/categories', categoryRoutes);
+app.use('/api/admin', adminRoutes);
 
 // Error handler
 app.use((err, req, res, next) => {

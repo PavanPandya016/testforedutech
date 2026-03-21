@@ -23,3 +23,12 @@ exports.protect = async (req, res, next) => {
     res.status(401).json({ success: false, error: 'Invalid token' });
   }
 };
+
+// Admin middleware to restrict access to authorized roles
+exports.admin = (req, res, next) => {
+  if (req.user && (req.user.role === 'admin' || req.user.role === 'instructor')) {
+    next();
+  } else {
+    res.status(403).json({ success: false, error: 'Access denied: Admin privileges required' });
+  }
+};
