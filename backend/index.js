@@ -35,7 +35,9 @@ if (process.env.NODE_ENV === 'development') {
 const allowedOrigins = [
   process.env.FRONTEND_URL || 'http://localhost:3000',
   'http://localhost:5173',
-  'http://localhost:5174'
+  'http://localhost:5174',
+  'https://edutech-5psu.vercel.app',
+  'https://edutech-5psu.vercel.app/'
 ];
 
 app.use(cors({
@@ -88,9 +90,13 @@ app.post('/upload', upload.single('file'), async (req, res) => {
 });
 
 let isConnected = false;
+
+// Prefer buffering during startup in serverless environment so early requests do not error.
+mongoose.set('bufferCommands', true);
+
 const connectDB = async () => {
   if (isConnected) return;
-  mongoose.set('bufferCommands', false);
+
   try {
     const db = await mongoose.connect(process.env.MONGODB_URI, {
       maxPoolSize: 10,
@@ -98,13 +104,26 @@ const connectDB = async () => {
       socketTimeoutMS: 45000,
       family: 4 // Use IPv4, skip trying IPv6 which can cause SRV errors
     });
-    isConnected = db.connections[0].readyState;
+    isConnected = db.connections[0].readyState === 1; // 1 = connected
     console.log('✅ MongoDB Atlas connected successfully');
   } catch (err) {
+    isConnected = false;
     console.error('❌ MongoDB Atlas connection error:', err);
+    throw err;
   }
 };
-connectDB();
+
+// Ensure DB is connected before processing each request.
+app.use(async (req, res, next) => {
+  if (!isConnected) {
+    try {
+      await connectDB();
+    } catch (err) {
+      return res.status(500).json({ error: 'Database connection not ready. Please retry.' });
+    }
+  }
+  next();
+});
 
 // Admin API
 const adminRouter = require('./admin/adminConfig');
@@ -134,7 +153,7 @@ app.use('/api/categories', categoryRoutes);
 // Error handler
 app.use((err, req, res, next) => {
   console.error('Error:', err);
-  
+
   // Handle Mongoose/MongoDB duplicate key errors (E11000)
   if (err.code === 11000) {
     const field = Object.keys(err.keyPattern || {})[0] || 'field';
