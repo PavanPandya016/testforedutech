@@ -11,9 +11,9 @@ export const authService = {
   register: async (userData) => {
     try {
       const data = await api.post('/auth/register', userData);
-      if (data.token) {
-        localStorage.setItem('edutech_token', data.token);
+      if (data.user) {
         localStorage.setItem('edutech_user', JSON.stringify(data.user));
+        if (data.token) localStorage.setItem('edutech_token', data.token);
       }
       return data;
     } catch (error) {
@@ -29,9 +29,9 @@ export const authService = {
   login: async (credentials) => {
     try {
       const data = await api.post('/auth/login', credentials);
-      if (data.token) {
-        localStorage.setItem('edutech_token', data.token);
+      if (data.user) {
         localStorage.setItem('edutech_user', JSON.stringify(data.user));
+        if (data.token) localStorage.setItem('edutech_token', data.token);
       }
       return data;
     } catch (error) {
@@ -49,8 +49,8 @@ export const authService = {
     } catch (error) {
       console.error('Error in authService.logout:', error);
     } finally {
-      localStorage.removeItem('edutech_token');
       localStorage.removeItem('edutech_user');
+      localStorage.removeItem('edutech_token');
     }
   },
 

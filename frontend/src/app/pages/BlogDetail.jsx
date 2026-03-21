@@ -19,6 +19,7 @@ export default function BlogDetail() {
   const [activeSection, setActiveSection] = useState(null);
   const [keepReading, setKeepReading] = useState([]);
   const [userRole, setUserRole] = useState(null);
+  const [userId, setUserId] = useState(null);
 
   // Framer motion variants
   const fadeInUp = {
@@ -36,6 +37,7 @@ export default function BlogDetail() {
     if (userStr) {
       const user = JSON.parse(userStr);
       setUserRole(user.role);
+      setUserId(user._id || user.id);
     }
   }, []);
 
@@ -151,7 +153,7 @@ export default function BlogDetail() {
       <main className="max-w-[1240px] mx-auto px-4 sm:px-6 lg:px-8 py-8 sm:py-12 lg:py-16">
 
         {/* Admin/Instructor Actions - only shown to authorized users */}
-        {(userRole === 'admin' || userRole === 'instructor') && (
+        {(userRole === 'admin' || userRole === 'instructor' || (blog.authorId && userId === blog.authorId)) && (
           <motion.div
             initial={{ opacity: 0, y: -10 }}
             animate={{ opacity: 1, y: 0 }}

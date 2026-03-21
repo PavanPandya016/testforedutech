@@ -15,7 +15,7 @@ const blogPostSchema = new mongoose.Schema({
   viewCount: { type: Number, default: 0 }
 }, { timestamps: true });
 
-blogPostSchema.pre('save', function(next) {
+blogPostSchema.pre('save', function (next) {
   if (this.isModified('title')) {
     this.slug = this.title.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-+|-+$/g, '');
   }
@@ -25,7 +25,6 @@ blogPostSchema.pre('save', function(next) {
   next();
 });
 
-blogPostSchema.index({ slug: 1 });
 blogPostSchema.index({ title: 'text', content: 'text' });
 
 module.exports = mongoose.model('BlogPost', blogPostSchema);

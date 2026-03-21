@@ -1,4 +1,5 @@
 const mongoose = require('mongoose');
+const slugify = require('slugify');
 
 const courseSchema = new mongoose.Schema({
   title: { type: String, required: true, trim: true },
@@ -22,22 +23,34 @@ courseSchema.virtual('modules', {
   foreignField: 'course'
 });
 
-courseSchema.pre('save', function(next) {
-  if (this.isModified('title')) {
-    this.slug = this.title.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-+|-+$/g, '');
+// Auto-generate unique slug before validation
+courseSchema.pre('validate', async function (next) {
+  if (this.isModified('title') && !this.slug) {
+    let baseSlug = slugify(this.title, { lower: true, strict: true });
+    let slug = baseSlug;
+    let counter = 1;
+
+    // Check if Course model is already constructed
+    const Course = mongoose.models.Course || mongoose.model('Course', courseSchema);
+
+    while (await Course.findOne({ slug, _id: { $ne: this._id } })) {
+      slug = `${baseSlug}-${counter}`;
+      counter++;
+    }
+
+    this.slug = slug;
   }
   next();
 });
 
-courseSchema.index({ slug: 1 });
 courseSchema.index({ title: 'text', description: 'text' });
 
-courseSchema.methods.incrementEnrollment = async function() {
+courseSchema.methods.incrementEnrollment = async function () {
   this.enrollmentCount += 1;
   await this.save();
 };
 
-courseSchema.statics.getFeatured = function() {
+courseSchema.statics.getFeatured = function () {
   return this.find({ isFeatured: true, isActive: true }).sort({ createdAt: -1 }).limit(6);
 };
 

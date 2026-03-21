@@ -5,12 +5,12 @@
  * Throws an Error with status and data properties if the request fails.
  */
 
-const BASE_URL = import.meta.env.VITE_API_BASE_URL || 'https://dummyjson.com';
+const BASE_URL = import.meta.env.VITE_API_BASE_URL || 'http://localhost:5000/api';
 
 const handleResponse = async (response) => {
   if (!response.ok) {
     const errorData = await response.json().catch(() => ({}));
-    const error = new Error(errorData.message || `HTTP error! status: ${response.status}`);
+    const error = new Error(errorData.error || errorData.message || `HTTP error! status: ${response.status}`);
     error.status = response.status;
     error.data = errorData;
     throw error;
@@ -32,6 +32,7 @@ export const api = {
     const response = await fetch(`${BASE_URL}${endpoint}`, {
       method: 'GET',
       headers: getHeaders(options.headers),
+      credentials: 'include',
       ...options,
     });
     return handleResponse(response);
@@ -41,6 +42,7 @@ export const api = {
     const response = await fetch(`${BASE_URL}${endpoint}`, {
       method: 'POST',
       headers: getHeaders(options.headers),
+      credentials: 'include',
       body: JSON.stringify(data),
       ...options,
     });
@@ -51,6 +53,7 @@ export const api = {
     const response = await fetch(`${BASE_URL}${endpoint}`, {
       method: 'PUT',
       headers: getHeaders(options.headers),
+      credentials: 'include',
       body: JSON.stringify(data),
       ...options,
     });
@@ -61,6 +64,7 @@ export const api = {
     const response = await fetch(`${BASE_URL}${endpoint}`, {
       method: 'DELETE',
       headers: getHeaders(options.headers),
+      credentials: 'include',
       ...options,
     });
     return handleResponse(response);

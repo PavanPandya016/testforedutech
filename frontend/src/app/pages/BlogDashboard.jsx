@@ -11,6 +11,7 @@ export default function BlogDashboard() {
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState(null);
   const [userRole, setUserRole] = useState(null);
+  const [userId, setUserId] = useState(null);
   const navigate = useNavigate();
 
   useEffect(() => {
@@ -20,6 +21,7 @@ export default function BlogDashboard() {
       try {
         const user = JSON.parse(userStr);
         setUserRole(user.role);
+        setUserId(user._id || user.id);
       } catch (_) { }
     }
   }, []);
@@ -203,20 +205,24 @@ export default function BlogDashboard() {
                             >
                               <Eye className="w-5 h-5" />
                             </button>
-                            <button
-                              onClick={() => navigate(`/blog/editor/${blog.slug || blogId}`)}
-                              title="Edit"
-                              className="text-gray-400 hover:text-blue-600 transition-colors"
-                            >
-                              <Edit className="w-5 h-5" />
-                            </button>
-                            <button
-                              onClick={() => handleDelete(blogId)}
-                              title="Delete"
-                              className="text-gray-400 hover:text-red-500 transition-colors"
-                            >
-                              <Trash2 className="w-5 h-5" />
-                            </button>
+                            {(userRole === 'admin' || userRole === 'instructor' || (blog.authorId && userId === blog.authorId)) && (
+                              <>
+                                <button
+                                  onClick={() => navigate(`/blog/editor/${blog.slug || blogId}`)}
+                                  title="Edit"
+                                  className="text-gray-400 hover:text-blue-600 transition-colors"
+                                >
+                                  <Edit className="w-5 h-5" />
+                                </button>
+                                <button
+                                  onClick={() => handleDelete(blogId)}
+                                  title="Delete"
+                                  className="text-gray-400 hover:text-red-500 transition-colors"
+                                >
+                                  <Trash2 className="w-5 h-5" />
+                                </button>
+                              </>
+                            )}
                           </div>
                         </td>
                       </motion.tr>

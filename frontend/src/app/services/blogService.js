@@ -23,6 +23,7 @@ const normalizePost = (post) => {
   const categoryName = post.category?.name || post.category || 'General';
   return {
     ...post,
+    authorId: authorObj._id || authorObj.id || null,
     id: post._id || post.id,
     image: post.featuredImage || 'https://images.unsplash.com/photo-1516321318423-f06f85e504b3?w=600',
     author: authorName,
@@ -140,6 +141,35 @@ export const blogService = {
       return (data.tags || []).map(t => t.name);
     } catch (error) {
       console.error('Error fetching tags:', error);
+      throw error;
+    }
+  },
+
+  /**
+   * Upload an image to the backend and return the secure URL.
+   */
+  uploadImage: async (file) => {
+    try {
+      const formData = new FormData();
+      formData.append('file', file);
+      
+      const token = localStorage.getItem('edutech_token');
+      const headers = {};
+      if (token) headers['Authorization'] = `Bearer ${token}`;
+
+      const apiUrl = import.meta.env.VITE_API_BASE_URL || 'http://localhost:5000/api';
+      const uploadUrl = apiUrl.replace(/\/api\/?$/, '/upload');
+
+      const res = await fetch(uploadUrl, {
+        method: 'POST',
+        headers,
+        body: formData
+      });
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.error || 'Upload failed');
+      return data.filepath;
+    } catch (error) {
+      console.error('Error uploading image:', error);
       throw error;
     }
   }

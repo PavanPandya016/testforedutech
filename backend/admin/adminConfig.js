@@ -3,39 +3,63 @@ const router = express.Router();
 const { User, Course, Event, BlogPost, Category, Tag } = require('../models');
 
 // Admin authentication
-const adminAuth = (req, res, next) => {
-  const authHeader = req.headers.authorization;
-  if (!authHeader) {
-    return res.status(401).json({ error: 'No credentials provided' });
-  }
-  
-  const [email, password] = Buffer.from(authHeader.split(' ')[1], 'base64').toString().split(':');
-  
-  if (email === process.env.ADMIN_EMAIL && password === process.env.ADMIN_PASSWORD) {
+const adminAuth = async (req, res, next) => {
+  try {
+    const authHeader = req.headers.authorization;
+    if (!authHeader) {
+      return res.status(401).json({ error: 'No credentials provided' });
+    }
+    
+    const [email, password] = Buffer.from(authHeader.split(' ')[1], 'base64').toString().split(':');
+
+    
+    // Look up user in MongoDB Atlas
+    const user = await User.findOne({ email }).select('+password');
+    if (!user) {
+      return res.status(401).json({ error: 'Invalid credentials' });
+    }
+    
+    // Verify password
+    const isMatch = await user.comparePassword(password);
+    if (!isMatch) {
+      return res.status(401).json({ error: 'Invalid credentials' });
+    }
+    
+    // Ensure the user has admin privileges
+    if (user.role !== 'admin' && user.role !== 'instructor') {
+      return res.status(403).json({ error: 'Access denied: Admin privileges required' });
+    }
+    
+    req.adminUser = user;
     next();
-  } else {
-    res.status(401).json({ error: 'Invalid credentials' });
+  } catch (err) {
+    console.error('Admin authentication error:', err);
+    res.status(500).json({ error: 'Authentication processing error' });
   }
 };
 
 // Dashboard
 router.get('/', adminAuth, async (req, res) => {
-  const stats = {
-    users: await User.countDocuments(),
-    courses: await Course.countDocuments(),
-    events: await Event.countDocuments(),
-    posts: await BlogPost.countDocuments(),
-  };
-  res.json({ 
-    message: 'EduTech Admin API',
-    stats,
-    endpoints: {
-      users: '/admin/users',
-      courses: '/admin/courses',
-      events: '/admin/events',
-      blog: '/admin/posts'
-    }
-  });
+  try {
+    const stats = {
+      users: await User.countDocuments(),
+      courses: await Course.countDocuments(),
+      events: await Event.countDocuments(),
+      posts: await BlogPost.countDocuments(),
+    };
+    res.json({ 
+      message: 'EduTech Admin API',
+      stats,
+      endpoints: {
+        users: '/admin/users',
+        courses: '/admin/courses',
+        events: '/admin/events',
+        blog: '/admin/posts'
+      }
+    });
+  } catch (err) {
+    res.status(500).json({ error: 'Database connection failed. Check your console.' });
+  }
 });
 
 // USERS

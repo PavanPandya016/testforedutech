@@ -1,65 +1,275 @@
 <!DOCTYPE html>
 <html lang="en">
+
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>EduTech Admin - Complete</title>
     <style>
-        * { margin: 0; padding: 0; box-sizing: border-box; }
-        body { font-family: system-ui, -apple-system, sans-serif; background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); min-height: 100vh; padding: 20px; }
-        .login-box { background: white; padding: 40px; border-radius: 10px; box-shadow: 0 10px 40px rgba(0,0,0,0.2); max-width: 400px; margin: 100px auto; }
-        .login-box h2 { margin-bottom: 30px; }
-        input, select, textarea { width: 100%; padding: 12px; margin: 8px 0; border: 2px solid #e0e0e0; border-radius: 6px; font-size: 14px; }
-        input:focus, select:focus, textarea:focus { outline: none; border-color: #667eea; }
-        button { padding: 12px 24px; background: #667eea; color: white; border: none; border-radius: 6px; cursor: pointer; margin: 5px; font-weight: 600; }
-        button:hover { opacity: 0.9; }
-        .btn-danger { background: #dc3545; }
-        .btn-success { background: #28a745; }
-        .btn-warning { background: #ffc107; color: #333; }
-        .error { background: #fee; color: #c33; padding: 12px; border-radius: 6px; margin: 10px 0; display: none; }
-        .success { background: #efe; color: #3c3; padding: 12px; border-radius: 6px; margin: 10px 0; }
-        .admin-panel { display: none; max-width: 1400px; margin: 0 auto; }
-        .header { background: white; padding: 20px; border-radius: 10px; margin-bottom: 20px; display: flex; justify-content: space-between; align-items: center; box-shadow: 0 2px 10px rgba(0,0,0,0.1); }
-        .stats { display: grid; grid-template-columns: repeat(4, 1fr); gap: 15px; margin-bottom: 20px; }
-        .stat-card { background: white; padding: 20px; border-radius: 10px; text-align: center; box-shadow: 0 2px 10px rgba(0,0,0,0.1); }
-        .stat-card h3 { font-size: 32px; color: #667eea; }
-        .tabs { display: flex; gap: 10px; margin-bottom: 20px; flex-wrap: wrap; }
-        .tab { padding: 12px 24px; background: white; border: none; border-radius: 8px; cursor: pointer; box-shadow: 0 2px 5px rgba(0,0,0,0.1); }
-        .tab.active { background: #667eea; color: white; }
-        .content-box { background: white; padding: 25px; border-radius: 10px; box-shadow: 0 2px 10px rgba(0,0,0,0.1); }
-        .tab-content { display: none; }
-        .tab-content.active { display: block; }
-        table { width: 100%; border-collapse: collapse; margin-top: 15px; }
-        th, td { padding: 12px; text-align: left; border-bottom: 1px solid #ddd; }
-        th { background: #f8f9fa; font-weight: 600; }
-        .form-section { display: none; margin-top: 20px; padding: 20px; background: #f8f9fa; border-radius: 8px; }
-        label { display: block; margin-top: 12px; font-weight: 500; font-size: 14px; }
-        .preview-img { max-width: 200px; margin: 10px 0; border-radius: 8px; }
-        .modal { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.6); z-index: 1000; }
-        .modal-content { background: white; padding: 30px; border-radius: 10px; max-width: 600px; margin: 50px auto; max-height: 80vh; overflow-y: auto; }
-        .close { float: right; font-size: 28px; cursor: pointer; }
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: system-ui, -apple-system, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            padding: 20px;
+        }
+
+        .login-box {
+            background: white;
+            padding: 40px;
+            border-radius: 10px;
+            box-shadow: 0 10px 40px rgba(0, 0, 0, 0.2);
+            max-width: 400px;
+            margin: 100px auto;
+        }
+
+        .login-box h2 {
+            margin-bottom: 30px;
+        }
+
+        input,
+        select,
+        textarea {
+            width: 100%;
+            padding: 12px;
+            margin: 8px 0;
+            border: 2px solid #e0e0e0;
+            border-radius: 6px;
+            font-size: 14px;
+        }
+
+        input:focus,
+        select:focus,
+        textarea:focus {
+            outline: none;
+            border-color: #667eea;
+        }
+
+        button {
+            padding: 12px 24px;
+            background: #667eea;
+            color: white;
+            border: none;
+            border-radius: 6px;
+            cursor: pointer;
+            margin: 5px;
+            font-weight: 600;
+        }
+
+        button:hover {
+            opacity: 0.9;
+        }
+
+        .btn-danger {
+            background: #dc3545;
+        }
+
+        .btn-success {
+            background: #28a745;
+        }
+
+        .btn-warning {
+            background: #ffc107;
+            color: #333;
+        }
+
+        .error {
+            background: #fee;
+            color: #c33;
+            padding: 12px;
+            border-radius: 6px;
+            margin: 10px 0;
+            display: none;
+        }
+
+        .success {
+            background: #efe;
+            color: #3c3;
+            padding: 12px;
+            border-radius: 6px;
+            margin: 10px 0;
+        }
+
+        .admin-panel {
+            display: none;
+            max-width: 1400px;
+            margin: 0 auto;
+        }
+
+        .header {
+            background: white;
+            padding: 20px;
+            border-radius: 10px;
+            margin-bottom: 20px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+        }
+
+        .stats {
+            display: grid;
+            grid-template-columns: repeat(4, 1fr);
+            gap: 15px;
+            margin-bottom: 20px;
+        }
+
+        .stat-card {
+            background: white;
+            padding: 20px;
+            border-radius: 10px;
+            text-align: center;
+            box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+        }
+
+        .stat-card h3 {
+            font-size: 32px;
+            color: #667eea;
+        }
+
+        .tabs {
+            display: flex;
+            gap: 10px;
+            margin-bottom: 20px;
+            flex-wrap: wrap;
+        }
+
+        .tab {
+            padding: 12px 24px;
+            background: white;
+            border: none;
+            border-radius: 8px;
+            cursor: pointer;
+            box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
+        }
+
+        .tab.active {
+            background: #667eea;
+            color: white;
+        }
+
+        .content-box {
+            background: white;
+            padding: 25px;
+            border-radius: 10px;
+            box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+        }
+
+        .tab-content {
+            display: none;
+        }
+
+        .tab-content.active {
+            display: block;
+        }
+
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-top: 15px;
+        }
+
+        th,
+        td {
+            padding: 12px;
+            text-align: left;
+            border-bottom: 1px solid #ddd;
+        }
+
+        th {
+            background: #f8f9fa;
+            font-weight: 600;
+        }
+
+        .form-section {
+            display: none;
+            margin-top: 20px;
+            padding: 20px;
+            background: #f8f9fa;
+            border-radius: 8px;
+        }
+
+        label {
+            display: block;
+            margin-top: 12px;
+            font-weight: 500;
+            font-size: 14px;
+        }
+
+        .preview-img {
+            max-width: 200px;
+            margin: 10px 0;
+            border-radius: 8px;
+        }
+
+        .modal {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0, 0, 0, 0.6);
+            z-index: 1000;
+        }
+
+        .modal-content {
+            background: white;
+            padding: 30px;
+            border-radius: 10px;
+            max-width: 600px;
+            margin: 50px auto;
+            max-height: 80vh;
+            overflow-y: auto;
+        }
+
+        .close {
+            float: right;
+            font-size: 28px;
+            cursor: pointer;
+        }
     </style>
 </head>
+
 <body>
     <div id="loginScreen" class="login-box">
         <h2>🎓 EduTech Admin</h2>
         <div id="loginError" class="error"></div>
-        <input type="email" id="loginEmail" placeholder="Email" value="admin@edutech.com">
-        <input type="password" id="loginPassword" placeholder="Password" value="admin123">
+        <input type="email" id="loginEmail" placeholder="Email">
+        <input type="password" id="loginPassword" placeholder="Password">
         <button onclick="login()" style="width: 100%;">Login</button>
     </div>
 
     <div id="adminPanel" class="admin-panel">
         <div class="header">
-            <div><h1>🚀 EduTech Admin</h1></div>
+            <div>
+                <h1>🚀 EduTech Admin</h1>
+            </div>
             <button onclick="logout()">Logout</button>
         </div>
 
         <div class="stats">
-            <div class="stat-card"><h3 id="usersCount">0</h3><p>Users</p></div>
-            <div class="stat-card"><h3 id="coursesCount">0</h3><p>Courses</p></div>
-            <div class="stat-card"><h3 id="eventsCount">0</h3><p>Events</p></div>
-            <div class="stat-card"><h3 id="postsCount">0</h3><p>Posts</p></div>
+            <div class="stat-card">
+                <h3 id="usersCount">0</h3>
+                <p>Users</p>
+            </div>
+            <div class="stat-card">
+                <h3 id="coursesCount">0</h3>
+                <p>Courses</p>
+            </div>
+            <div class="stat-card">
+                <h3 id="eventsCount">0</h3>
+                <p>Events</p>
+            </div>
+            <div class="stat-card">
+                <h3 id="postsCount">0</h3>
+                <p>Posts</p>
+            </div>
         </div>
 
         <div class="tabs">
@@ -73,7 +283,7 @@
             <div class="content-box">
                 <h2>Courses</h2>
                 <button class="btn-success" onclick="toggleForm('createCourseForm')">+ Create Course</button>
-                
+
                 <div id="createCourseForm" class="form-section">
                     <h3>New Course</h3>
                     <label>Title *</label>
@@ -81,7 +291,8 @@
                     <label>Description *</label>
                     <textarea id="courseDescription" rows="4" required></textarea>
                     <label>Thumbnail Image</label>
-                    <input type="file" id="courseThumbnail" accept="image/*" onchange="previewImage(this, 'courseThumbPreview')">
+                    <input type="file" id="courseThumbnail" accept="image/*"
+                        onchange="previewImage(this, 'courseThumbPreview')">
                     <img id="courseThumbPreview" class="preview-img" style="display:none;">
                     <label>Type</label>
                     <select id="courseType">
@@ -104,7 +315,15 @@
                 </div>
 
                 <table id="coursesTable">
-                    <thead><tr><th>Title</th><th>Type</th><th>Price</th><th>Enrollments</th><th>Actions</th></tr></thead>
+                    <thead>
+                        <tr>
+                            <th>Title</th>
+                            <th>Type</th>
+                            <th>Price</th>
+                            <th>Enrollments</th>
+                            <th>Actions</th>
+                        </tr>
+                    </thead>
                     <tbody></tbody>
                 </table>
             </div>
@@ -115,7 +334,7 @@
             <div class="content-box">
                 <h2>Events</h2>
                 <button class="btn-success" onclick="toggleForm('createEventForm')">+ Create Event</button>
-                
+
                 <div id="createEventForm" class="form-section">
                     <h3>New Event</h3>
                     <label>Title *</label>
@@ -123,7 +342,8 @@
                     <label>Description *</label>
                     <textarea id="eventDescription" rows="4" required></textarea>
                     <label>Event Image</label>
-                    <input type="file" id="eventThumbnail" accept="image/*" onchange="previewImage(this, 'eventThumbPreview')">
+                    <input type="file" id="eventThumbnail" accept="image/*"
+                        onchange="previewImage(this, 'eventThumbPreview')">
                     <img id="eventThumbPreview" class="preview-img" style="display:none;">
                     <label>Type</label>
                     <select id="eventType">
@@ -146,7 +366,15 @@
                 </div>
 
                 <table id="eventsTable">
-                    <thead><tr><th>Title</th><th>Type</th><th>Date</th><th>Registrations</th><th>Actions</th></tr></thead>
+                    <thead>
+                        <tr>
+                            <th>Title</th>
+                            <th>Type</th>
+                            <th>Date</th>
+                            <th>Registrations</th>
+                            <th>Actions</th>
+                        </tr>
+                    </thead>
                     <tbody></tbody>
                 </table>
             </div>
@@ -157,7 +385,7 @@
             <div class="content-box">
                 <h2>Users</h2>
                 <button class="btn-success" onclick="toggleForm('createUserForm')">+ Create User</button>
-                
+
                 <div id="createUserForm" class="form-section">
                     <h3>New User</h3>
                     <label>Username *</label>
@@ -183,7 +411,15 @@
                 </div>
 
                 <table id="usersTable">
-                    <thead><tr><th>Username</th><th>Email</th><th>Role</th><th>Created</th><th>Actions</th></tr></thead>
+                    <thead>
+                        <tr>
+                            <th>Username</th>
+                            <th>Email</th>
+                            <th>Role</th>
+                            <th>Created</th>
+                            <th>Actions</th>
+                        </tr>
+                    </thead>
                     <tbody></tbody>
                 </table>
             </div>
@@ -224,20 +460,27 @@
         function login() {
             const email = document.getElementById('loginEmail').value;
             const password = document.getElementById('loginPassword').value;
+            const err = document.getElementById('loginError');
+            err.style.display = 'none';
+
             authHeader = 'Basic ' + btoa(email + ':' + password);
             fetch(`${API}/admin`, { headers: { 'Authorization': authHeader } })
-            .then(res => res.json())
-            .then(data => {
-                if (data.error) {
-                    const err = document.getElementById('loginError');
-                    err.textContent = 'Invalid credentials';
+                .then(res => res.json())
+                .then(data => {
+                    if (data.error) {
+                        err.textContent = data.error || 'Invalid credentials';
+                        err.style.display = 'block';
+                    } else {
+                        document.getElementById('loginScreen').style.display = 'none';
+                        document.getElementById('adminPanel').style.display = 'block';
+                        loadDashboard();
+                    }
+                })
+                .catch(error => {
+                    err.textContent = 'Server Unreachable: Please ensure backend is running or access via http://localhost:5000/admin-panel';
                     err.style.display = 'block';
-                } else {
-                    document.getElementById('loginScreen').style.display = 'none';
-                    document.getElementById('adminPanel').style.display = 'block';
-                    loadDashboard();
-                }
-            });
+                    console.error(error);
+                });
         }
 
         function logout() {
@@ -248,13 +491,13 @@
 
         function loadDashboard() {
             fetch(`${API}/admin`, { headers: { 'Authorization': authHeader } })
-            .then(res => res.json())
-            .then(data => {
-                document.getElementById('usersCount').textContent = data.stats.users;
-                document.getElementById('coursesCount').textContent = data.stats.courses;
-                document.getElementById('eventsCount').textContent = data.stats.events;
-                document.getElementById('postsCount').textContent = data.stats.posts;
-            });
+                .then(res => res.json())
+                .then(data => {
+                    document.getElementById('usersCount').textContent = data.stats.users;
+                    document.getElementById('coursesCount').textContent = data.stats.courses;
+                    document.getElementById('eventsCount').textContent = data.stats.events;
+                    document.getElementById('postsCount').textContent = data.stats.posts;
+                });
             loadCourses();
             loadEvents();
             loadUsers();
@@ -318,23 +561,23 @@
                 headers: { 'Authorization': authHeader, 'Content-Type': 'application/json' },
                 body: JSON.stringify(course)
             })
-            .then(res => res.json())
-            .then(data => {
-                document.getElementById('courseMessage').innerHTML = '<div class="success">✅ Course created!</div>';
-                loadCourses();
-                loadDashboard();
-                setTimeout(() => toggleForm('createCourseForm'), 1500);
-            });
+                .then(res => res.json())
+                .then(data => {
+                    document.getElementById('courseMessage').innerHTML = '<div class="success">✅ Course created!</div>';
+                    loadCourses();
+                    loadDashboard();
+                    setTimeout(() => toggleForm('createCourseForm'), 1500);
+                });
         }
 
         function loadCourses() {
             fetch(`${API}/admin/courses`, { headers: { 'Authorization': authHeader } })
-            .then(res => res.json())
-            .then(data => {
-                const tbody = document.querySelector('#coursesTable tbody');
-                tbody.innerHTML = '';
-                data.courses.forEach(course => {
-                    tbody.innerHTML += `
+                .then(res => res.json())
+                .then(data => {
+                    const tbody = document.querySelector('#coursesTable tbody');
+                    tbody.innerHTML = '';
+                    data.courses.forEach(course => {
+                        tbody.innerHTML += `
                         <tr>
                             <td>${course.title}</td>
                             <td>${course.courseType}</td>
@@ -345,8 +588,8 @@
                             </td>
                         </tr>
                     `;
+                    });
                 });
-            });
         }
 
         function deleteCourse(id) {
@@ -381,23 +624,23 @@
                 headers: { 'Authorization': authHeader, 'Content-Type': 'application/json' },
                 body: JSON.stringify(event)
             })
-            .then(res => res.json())
-            .then(data => {
-                document.getElementById('eventMessage').innerHTML = '<div class="success">✅ Event created!</div>';
-                loadEvents();
-                loadDashboard();
-                setTimeout(() => toggleForm('createEventForm'), 1500);
-            });
+                .then(res => res.json())
+                .then(data => {
+                    document.getElementById('eventMessage').innerHTML = '<div class="success">✅ Event created!</div>';
+                    loadEvents();
+                    loadDashboard();
+                    setTimeout(() => toggleForm('createEventForm'), 1500);
+                });
         }
 
         function loadEvents() {
             fetch(`${API}/admin/events`, { headers: { 'Authorization': authHeader } })
-            .then(res => res.json())
-            .then(data => {
-                const tbody = document.querySelector('#eventsTable tbody');
-                tbody.innerHTML = '';
-                data.events.forEach(event => {
-                    tbody.innerHTML += `
+                .then(res => res.json())
+                .then(data => {
+                    const tbody = document.querySelector('#eventsTable tbody');
+                    tbody.innerHTML = '';
+                    data.events.forEach(event => {
+                        tbody.innerHTML += `
                         <tr>
                             <td>${event.title}</td>
                             <td>${event.eventType}</td>
@@ -408,8 +651,8 @@
                             </td>
                         </tr>
                     `;
+                    });
                 });
-            });
         }
 
         function deleteEvent(id) {
@@ -436,23 +679,23 @@
                 headers: { 'Authorization': authHeader, 'Content-Type': 'application/json' },
                 body: JSON.stringify(user)
             })
-            .then(res => res.json())
-            .then(data => {
-                document.getElementById('userMessage').innerHTML = '<div class="success">✅ User created!</div>';
-                loadUsers();
-                loadDashboard();
-                setTimeout(() => toggleForm('createUserForm'), 1500);
-            });
+                .then(res => res.json())
+                .then(data => {
+                    document.getElementById('userMessage').innerHTML = '<div class="success">✅ User created!</div>';
+                    loadUsers();
+                    loadDashboard();
+                    setTimeout(() => toggleForm('createUserForm'), 1500);
+                });
         }
 
         function loadUsers() {
             fetch(`${API}/admin/users`, { headers: { 'Authorization': authHeader } })
-            .then(res => res.json())
-            .then(data => {
-                const tbody = document.querySelector('#usersTable tbody');
-                tbody.innerHTML = '';
-                data.users.forEach(user => {
-                    tbody.innerHTML += `
+                .then(res => res.json())
+                .then(data => {
+                    const tbody = document.querySelector('#usersTable tbody');
+                    tbody.innerHTML = '';
+                    data.users.forEach(user => {
+                        tbody.innerHTML += `
                         <tr>
                             <td>${user.username}</td>
                             <td>${user.email}</td>
@@ -464,8 +707,8 @@
                             </td>
                         </tr>
                     `;
+                    });
                 });
-            });
         }
 
         function openEditUser(id, username, email, role, firstName, lastName) {
@@ -493,12 +736,12 @@
                 headers: { 'Authorization': authHeader, 'Content-Type': 'application/json' },
                 body: JSON.stringify(user)
             })
-            .then(res => res.json())
-            .then(data => {
-                document.getElementById('editUserMessage').innerHTML = '<div class="success">✅ User updated!</div>';
-                loadUsers();
-                setTimeout(() => closeModal('editUserModal'), 1500);
-            });
+                .then(res => res.json())
+                .then(data => {
+                    document.getElementById('editUserMessage').innerHTML = '<div class="success">✅ User updated!</div>';
+                    loadUsers();
+                    setTimeout(() => closeModal('editUserModal'), 1500);
+                });
         }
 
         function closeModal(modalId) {
@@ -515,4 +758,5 @@
         }
     </script>
 </body>
+
 </html>

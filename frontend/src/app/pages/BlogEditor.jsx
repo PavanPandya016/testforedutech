@@ -27,14 +27,15 @@ const MenuBar = ({ editor }) => {
     const fileInput = document.createElement('input');
     fileInput.type = 'file';
     fileInput.accept = 'image/*';
-    fileInput.onchange = (e) => {
+    fileInput.onchange = async (e) => {
       const file = e.target.files[0];
       if (file) {
-        const reader = new FileReader();
-        reader.onload = (event) => {
-          editor.chain().focus().setImage({ src: event.target.result }).run();
-        };
-        reader.readAsDataURL(file);
+        try {
+          const url = await blogService.uploadImage(file);
+          editor.chain().focus().setImage({ src: url }).run();
+        } catch (err) {
+          alert('Failed to upload image into editor.');
+        }
       }
     };
     fileInput.click();
@@ -219,14 +220,18 @@ export default function BlogEditor() {
     setFormData(prev => ({ ...prev, [name]: value }));
   };
 
-  const handleHeroImageUpload = (e) => {
+  const handleHeroImageUpload = async (e) => {
     const file = e.target.files[0];
     if (file) {
-      const reader = new FileReader();
-      reader.onload = (event) => {
-        setFormData(prev => ({ ...prev, image: event.target.result }));
-      };
-      reader.readAsDataURL(file);
+      setIsSaving(true);
+      try {
+        const url = await blogService.uploadImage(file);
+        setFormData(prev => ({ ...prev, image: url }));
+      } catch (err) {
+        alert('Failed to upload hero image.');
+      } finally {
+        setIsSaving(false);
+      }
     }
   };
 

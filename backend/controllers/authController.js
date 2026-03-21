@@ -1,6 +1,21 @@
 const asyncHandler = require('../middleware/asyncHandler');
 const { User } = require('../models');
 
+const sendTokenResponse = (user, statusCode, res) => {
+  const token = user.getSignedToken();
+  const options = {
+    expires: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000), // 7 days
+    httpOnly: true,
+    secure: process.env.NODE_ENV === 'production',
+    sameSite: process.env.NODE_ENV === 'production' ? 'none' : 'lax'
+  };
+  res.status(statusCode).cookie('edutech_token', token, options).json({
+    success: true,
+    token,
+    user: user.getPublicProfile()
+  });
+};
+
 exports.register = asyncHandler(async (req, res) => {
   const { username, email, password, name, mobile } = req.body;
 
@@ -34,8 +49,7 @@ exports.register = asyncHandler(async (req, res) => {
     phone 
   });
 
-  const token = user.getSignedToken();
-  res.status(201).json({ success: true, token, user: user.getPublicProfile() });
+  sendTokenResponse(user, 201, res);
 });
 
 exports.login = asyncHandler(async (req, res) => {
@@ -50,8 +64,8 @@ exports.login = asyncHandler(async (req, res) => {
   if (!user.isActive) {
     return res.status(401).json({ success: false, error: 'Account deactivated' });
   }
-  const token = user.getSignedToken();
-  res.json({ success: true, token, user: user.getPublicProfile() });
+
+  sendTokenResponse(user, 200, res);
 });
 
 exports.getProfile = asyncHandler(async (req, res) => {
@@ -69,5 +83,11 @@ exports.updateProfile = asyncHandler(async (req, res) => {
 });
 
 exports.logout = asyncHandler(async (req, res) => {
+  res.cookie('edutech_token', 'none', {
+    expires: new Date(Date.now() + 10 * 1000),
+    httpOnly: true,
+    secure: process.env.NODE_ENV === 'production',
+    sameSite: process.env.NODE_ENV === 'production' ? 'none' : 'lax'
+  });
   res.json({ success: true, message: 'Logged out' });
 });
