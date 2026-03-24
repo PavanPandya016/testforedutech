@@ -21,7 +21,7 @@ export default defineConfig({
   assetsInclude: ['**/*.svg', '**/*.csv'],
   
   build: {
-    outDir: 'dist',
+    outDir: '../backend/build',
     rollupOptions: {
       output: {
         manualChunks: {
