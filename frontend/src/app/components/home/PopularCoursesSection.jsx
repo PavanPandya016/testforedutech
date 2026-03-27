@@ -55,17 +55,19 @@ function CarouselControls({ page, pageCount, onPrev, onNext, onGoTo }) {
 }
 
 export default function PopularCoursesSection({ courses }) {
+  if (!courses || courses.length === 0) return null;
+
   const pageCount = courses.length;
   const [page, setPage] = useState(0);
 
   const ITEM_WIDTH = 320 + 24; // card width + gap-6 (1.5rem = 24px)
 
   const prev = useCallback(
-    () => setPage((p) => (p - 1 + pageCount) % pageCount),
+    () => setPage((p) => (pageCount > 0 ? (p - 1 + pageCount) % pageCount : 0)),
     [pageCount]
   );
   const next = useCallback(
-    () => setPage((p) => (p + 1) % pageCount),
+    () => setPage((p) => (pageCount > 0 ? (p + 1) % pageCount : 0)),
     [pageCount]
   );
   const goTo = useCallback((i) => setPage(i), []);
@@ -107,7 +109,7 @@ export default function PopularCoursesSection({ courses }) {
               role="list"
             >
               {courses.map((course, index) => (
-                <div key={course.id} role="listitem">
+                <div key={course.id || index} role="listitem">
                   <CourseCard
                     course={course}
                     index={index}
@@ -119,13 +121,15 @@ export default function PopularCoursesSection({ courses }) {
           </div>
         </div>
 
-        <CarouselControls
-          page={page}
-          pageCount={pageCount}
-          onPrev={prev}
-          onNext={next}
-          onGoTo={goTo}
-        />
+        {pageCount > 1 && (
+          <CarouselControls
+            page={page}
+            pageCount={pageCount}
+            onPrev={prev}
+            onNext={next}
+            onGoTo={goTo}
+          />
+        )}
       </div>
     </section>
   );
