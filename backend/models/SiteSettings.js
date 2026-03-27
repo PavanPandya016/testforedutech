@@ -11,7 +11,11 @@ const siteSettingsSchema = new mongoose.Schema({
   featuredCourseIds: [{
     type: mongoose.Schema.Types.ObjectId,
     ref: 'Course'
-  }]
+  }],
+  ctaImage: {
+    type: String,
+    default: 'https://picsum.photos/seed/cta/500/500'
+  }
 }, { timestamps: true });
 
 // Ensure only one settings document exists

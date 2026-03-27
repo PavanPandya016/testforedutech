@@ -13,7 +13,7 @@ const userSchema = new mongoose.Schema({
   gender: { type: String, enum: ['male', 'female', 'other', 'prefer_not_to_say'] },
   dateOfBirth: Date,
   profilePicture: String,
-  role: { type: String, enum: ['student', 'admin'], default: 'student' },
+  role: { type: String, enum: ['student', 'admin', 'instructor'], default: 'student' },
   isActive: { type: Boolean, default: true },
   isEmailVerified: { type: Boolean, default: false }
 }, { timestamps: true });

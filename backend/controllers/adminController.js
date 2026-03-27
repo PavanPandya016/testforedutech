@@ -1,5 +1,5 @@
 const asyncHandler = require('../middleware/asyncHandler');
-const { User, Course, Event, BlogPost, EventRegistration, Category, Tag } = require('../models');
+const { User, Course, Event, BlogPost, EventRegistration, Category, Tag, Instructor } = require('../models');
 
 // @desc    Get dashboard stats
 // @route   GET /api/admin/stats
@@ -19,7 +19,8 @@ exports.getStats = asyncHandler(async (req, res) => {
       users: userCount,
       courses: courseCount,
       events: eventCount,
-      blogs: blogCount
+      blogs: blogCount,
+      instructors: await Instructor.countDocuments()
     },
     recentUsers
   });
@@ -33,22 +34,25 @@ exports.getUsers = asyncHandler(async (req, res) => {
   res.json({ success: true, count: users.length, users });
 });
 
-// @desc    Update user role or status
+// @desc    Update user
 // @route   PUT /api/admin/users/:id
 // @access  Private/Admin
 exports.updateUser = asyncHandler(async (req, res) => {
-  const { role, isActive } = req.body;
-  const user = await User.findById(req.params.id);
+  const user = await User.findByIdAndUpdate(req.params.id, req.body, { new: true, runValidators: true });
 
   if (!user) {
     return res.status(404).json({ success: false, error: 'User not found' });
   }
 
-  if (role) user.role = role;
-  if (isActive !== undefined) user.isActive = isActive;
-
-  await user.save();
   res.json({ success: true, user });
+});
+
+// @desc    Create user
+// @route   POST /api/admin/users
+// @access  Private/Admin
+exports.createUser = asyncHandler(async (req, res) => {
+  const user = await User.create(req.body);
+  res.status(201).json({ success: true, user });
 });
 
 // @desc    Delete user
@@ -89,6 +93,9 @@ exports.getEntities = asyncHandler(async (req, res) => {
     case 'tags':
       data = await Tag.find().sort({ name: 1 });
       break;
+    case 'instructors':
+      data = await Instructor.find().sort({ createdAt: -1 });
+      break;
     default:
       return res.status(400).json({ success: false, error: 'Invalid entity type' });
   }
@@ -110,6 +117,7 @@ exports.getEntityById = asyncHandler(async (req, res) => {
     case 'blogs': model = BlogPost; break;
     case 'categories': model = Category; break;
     case 'tags': model = Tag; break;
+    case 'instructors': model = Instructor; break;
     default:
       return res.status(400).json({ success: false, error: 'Invalid entity type' });
   }
@@ -135,6 +143,7 @@ exports.deleteEntity = asyncHandler(async (req, res) => {
     case 'blogs': model = BlogPost; break;
     case 'categories': model = Category; break;
     case 'tags': model = Tag; break;
+    case 'instructors': model = Instructor; break;
     default:
       return res.status(400).json({ success: false, error: 'Invalid entity type' });
   }
@@ -161,6 +170,7 @@ exports.updateEntity = asyncHandler(async (req, res) => {
     case 'blogs': model = BlogPost; break;
     case 'categories': model = Category; break;
     case 'tags': model = Tag; break;
+    case 'instructors': model = Instructor; break;
     default:
       return res.status(400).json({ success: false, error: 'Invalid entity type' });
   }
@@ -186,6 +196,7 @@ exports.createEntity = asyncHandler(async (req, res) => {
     case 'blogs': model = BlogPost; break;
     case 'categories': model = Category; break;
     case 'tags': model = Tag; break;
+    case 'instructors': model = Instructor; break;
     default:
       return res.status(400).json({ success: false, error: 'Invalid entity type' });
   }

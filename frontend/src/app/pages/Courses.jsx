@@ -291,13 +291,33 @@ export default function Courses() {
 
   useEffect(() => {
     const categoryParam = searchParams.get('category');
-    setSelectedCategories(categoryParam ? [categoryParam] : []);
+    if (categoryParam && courses.length > 0) {
+      // Find the name for this slug from available courses
+      const foundCourse = courses.find(c => {
+        const cat = c.category;
+        if (typeof cat === 'object') {
+          return cat.slug === categoryParam || cat.name?.toLowerCase() === categoryParam.toLowerCase();
+        }
+        return cat?.toLowerCase() === categoryParam.toLowerCase();
+      });
+
+      if (foundCourse) {
+        const name = typeof foundCourse.category === 'object' ? foundCourse.category.name : foundCourse.category;
+        setSelectedCategories([name]);
+      }
+    } else if (!categoryParam) {
+      setSelectedCategories([]);
+    }
     
     const searchParam = searchParams.get('search');
     setSearchTerm(searchParam || '');
-  }, [searchParams]);
+  }, [searchParams, courses]);
 
-  const categories = useMemo(() => [...new Set(courses.map(c => c.category))], [courses]);
+  const categories = useMemo(() => {
+    const names = courses.map(c => typeof c.category === 'object' ? c.category.name : c.category);
+    return [...new Set(names)].filter(Boolean);
+  }, [courses]);
+  
   const levels = useMemo(() => ['Beginner', 'Intermediate', 'Advanced'], []);
 
   const toggleSelection = useCallback((setter, value) => {

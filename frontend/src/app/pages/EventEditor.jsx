@@ -14,7 +14,8 @@ import {
   Video,
   CheckCircle,
   Star,
-  ChevronLeft
+  ChevronLeft,
+  MapPin
 } from 'lucide-react';
 import Header from '../components/ui/Header';
 import Footer from '../components/ui/Footer';
@@ -33,6 +34,7 @@ export default function EventEditor() {
     startDateTime: '',
     endDateTime: '',
     meetingLink: '',
+    address: '',
     maxParticipants: '',
     isActive: true,
     isFeatured: false
@@ -60,6 +62,7 @@ export default function EventEditor() {
               startDateTime: startDate,
               endDateTime: endDate,
               meetingLink: event.meetingLink || '',
+              address: event.address || '',
               maxParticipants: event.maxParticipants || '',
               isActive: event.isActive !== undefined ? event.isActive : true,
               isFeatured: event.isFeatured || false
@@ -259,7 +262,23 @@ export default function EventEditor() {
                   </div>
                 </div>
 
-                {/* Links & Capacity */}
+                {/* Full-width Address for physical events */}
+                <div className="space-y-2">
+                  <label className="flex items-center gap-2 text-sm font-bold text-gray-700">
+                    <MapPin className="w-4 h-4 text-[#14627a]" /> Event Address (Physical Location)
+                  </label>
+                  <input
+                    type="text"
+                    name="address"
+                    value={formData.address}
+                    onChange={handleChange}
+                    placeholder="Enter the physical venue or location details..."
+                    className="w-full px-4 py-3 bg-gray-50 border border-gray-200 rounded-xl focus:ring-2 focus:ring-[#14627a]/20 focus:border-[#14627a] outline-none transition-all"
+                  />
+                  <p className="text-[10px] text-gray-400 italic font-medium pl-1">Leave empty for virtual events</p>
+                </div>
+
+                {/* Links & Capacity Grid */}
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-6">
                   <div className="space-y-2">
                     <label className="flex items-center gap-2 text-sm font-bold text-gray-700">

@@ -44,9 +44,18 @@ exports.getMyCourses = asyncHandler(async (req, res) => {
 });
 
 exports.getFeaturedCourses = asyncHandler(async (req, res) => {
-  const courses = await Course.find({ isFeatured: true, isActive: true })
+  let courses = await Course.find({ isFeatured: true, isActive: true })
     .populate('category', 'name slug')
     .sort({ createdAt: -1 })
     .limit(8);
+
+  // Fallback: If no featured courses, get top 8 most popular by enrollment count
+  if (!courses || courses.length === 0) {
+    courses = await Course.find({ isActive: true })
+      .populate('category', 'name slug')
+      .sort({ enrollmentCount: -1, createdAt: -1 })
+      .limit(8);
+  }
+
   res.json({ success: true, courses });
 });

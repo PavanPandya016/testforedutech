@@ -9,6 +9,7 @@ const eventSchema = new mongoose.Schema({
   startDateTime: { type: Date, required: true },
   endDateTime: { type: Date, required: true },
   meetingLink: String,
+  address: { type: String, trim: true },
   maxParticipants: Number,
   registrationCount: { type: Number, default: 0 },
   isActive: { type: Boolean, default: true },

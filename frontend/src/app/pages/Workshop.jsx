@@ -11,10 +11,10 @@ import { useNavigate } from 'react-router-dom';
 // --- Animation Variants ---
 const fadeInUp = {
   hidden: { opacity: 0, y: 30 },
-  visible: { 
-    opacity: 1, 
-    y: 0, 
-    transition: { duration: 0.6, ease: [0.22, 1, 0.36, 1] } 
+  visible: {
+    opacity: 1,
+    y: 0,
+    transition: { duration: 0.6, ease: [0.22, 1, 0.36, 1] }
   }
 };
 
@@ -52,9 +52,9 @@ function classifyEvents(events) {
     // Format a human-readable time string, e.g. "10:00 AM"
     const timeStr = eventDate.toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit' });
 
-    // Location: show meeting link host if present, otherwise fall back to event type
-    let locationStr = event.eventType || 'Online';
-    if (event.meetingLink) {
+    // Location: prioritize specific address, then meeting link host, then event type
+    let locationStr = event.address || event.eventType || 'Online';
+    if (!event.address && event.meetingLink) {
       try {
         locationStr = new URL(event.meetingLink).hostname.replace('www.', '');
       } catch (_) {
@@ -169,7 +169,7 @@ function RegistrationModal({ isOpen, onClose, eventTitle, onSubmit, isSubmitting
 
   return (
     <div className="fixed inset-0 z-[100] flex items-center justify-center p-4 bg-black/50 backdrop-blur-sm">
-      <motion.div 
+      <motion.div
         initial={{ opacity: 0, scale: 0.9, y: 20 }}
         animate={{ opacity: 1, scale: 1, y: 0 }}
         className="bg-white rounded-[30px] p-8 max-w-lg w-full shadow-2xl overflow-y-auto max-h-[90vh]"
@@ -182,7 +182,7 @@ function RegistrationModal({ isOpen, onClose, eventTitle, onSubmit, isSubmitting
             </svg>
           </button>
         </div>
-        
+
         <p className="text-gray-600 mb-6 italic">Event: <span className="font-bold text-[#2e7e96]">{eventTitle}</span></p>
 
         <form onSubmit={(e) => { e.preventDefault(); onSubmit(formData); }} className="space-y-6">
@@ -207,10 +207,10 @@ function RegistrationModal({ isOpen, onClose, eventTitle, onSubmit, isSubmitting
               </svg>
               Registration Notes
             </label>
-            <textarea 
+            <textarea
               rows="4"
               value={formData.notes}
-              onChange={(e) => setFormData({...formData, notes: e.target.value})}
+              onChange={(e) => setFormData({ ...formData, notes: e.target.value })}
               className="w-full px-5 py-4 bg-gray-50 border border-gray-200 rounded-2xl focus:ring-2 focus:ring-[#14627a]/20 focus:border-[#14627a] outline-none transition-all resize-none text-gray-700"
               placeholder="Tell us why you're interested or if you have any questions..."
             />
@@ -218,7 +218,7 @@ function RegistrationModal({ isOpen, onClose, eventTitle, onSubmit, isSubmitting
           </div>
 
           <div className="pt-2">
-            <button 
+            <button
               type="submit"
               disabled={isSubmitting}
               className="w-full bg-[#14627a] text-white py-4 rounded-2xl font-bold text-lg hover:bg-[#0f4a5b] transition-all disabled:opacity-50 shadow-lg flex items-center justify-center gap-2 group shadow-[#14627a]/20"
@@ -252,7 +252,7 @@ export default function Workshop() {
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [error, setError] = useState(null);
   const [registrationMessage, setRegistrationMessage] = useState('');
-  
+
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [selectedEvent, setSelectedEvent] = useState(null);
   const [currentUser, setCurrentUser] = useState(null);
@@ -282,7 +282,7 @@ export default function Workshop() {
       navigate('/login');
       return;
     }
-    
+
     setSelectedEvent({ id: eventId, title: eventTitle });
     setIsModalOpen(true);
   };
@@ -306,7 +306,7 @@ export default function Workshop() {
   const displayed = filter === 'all' ? events : events.filter(e => e.type === filter);
 
   const upcomingCount = events.filter(e => e.type === 'upcoming').length;
-  const pastCount     = events.filter(e => e.type === 'past').length;
+  const pastCount = events.filter(e => e.type === 'past').length;
 
   return (
     <div className="bg-white flex flex-col min-h-screen overflow-x-hidden">
@@ -314,20 +314,20 @@ export default function Workshop() {
 
       {/* ── Hero Section ── */}
       <section className="bg-gradient-to-br from-[#f8f9fa] to-[#e7f3f5] py-10 sm:py-14 md:py-20 px-4 sm:px-6 lg:px-8">
-        <motion.div 
+        <motion.div
           initial="hidden"
           whileInView="visible"
           viewport={{ once: true }}
           variants={staggerContainer}
           className="max-w-5xl mx-auto text-center"
         >
-          <motion.h1 
+          <motion.h1
             variants={fadeInUp}
             className="font-['DM_Serif_Text:Regular',sans-serif] text-[38px] sm:text-[56px] md:text-[72px] lg:text-[80px] text-[#2e7e96] leading-tight mb-4 sm:mb-6"
           >
             Our Events
           </motion.h1>
-          <motion.p 
+          <motion.p
             variants={fadeInUp}
             className="font-['Public_Sans:Regular',sans-serif] text-[14px] sm:text-[16px] md:text-[18px] lg:text-[20px] text-[#6d737a] leading-relaxed max-w-4xl mx-auto"
           >
@@ -345,18 +345,17 @@ export default function Workshop() {
         <div className="max-w-7xl mx-auto flex justify-center">
           <div className="inline-flex p-1.5 bg-gray-100 rounded-[20px] border border-gray-200">
             {[
-              { key: 'all',      label: 'All Events' },
+              { key: 'all', label: 'All Events' },
               { key: 'upcoming', label: `Upcoming (${upcomingCount})` },
-              { key: 'past',     label: `Past (${pastCount})` },
+              { key: 'past', label: `Past (${pastCount})` },
             ].map(({ key, label }) => {
               const isActive = filter === key;
               return (
                 <button
                   key={key}
                   onClick={() => setFilter(key)}
-                  className={`relative px-6 sm:px-8 py-2.5 rounded-[15px] text-sm md:text-base font-semibold transition-colors duration-300 focus:outline-none ${
-                    isActive ? 'text-white' : 'text-[#6d737a] hover:text-[#14627a]'
-                  }`}
+                  className={`relative px-6 sm:px-8 py-2.5 rounded-[15px] text-sm md:text-base font-semibold transition-colors duration-300 focus:outline-none ${isActive ? 'text-white' : 'text-[#6d737a] hover:text-[#14627a]'
+                    }`}
                 >
                   {isActive && (
                     <motion.div
@@ -397,7 +396,7 @@ export default function Workshop() {
           ) : error ? (
             <div className="text-center py-20">
               <p className="text-red-500 text-lg">{error}</p>
-              <button 
+              <button
                 onClick={() => window.location.reload()}
                 className="mt-4 px-6 py-2 bg-[#14627a] text-white rounded-lg"
               >
@@ -406,15 +405,15 @@ export default function Workshop() {
             </div>
           ) : (
             <>
-              <motion.div 
+              <motion.div
                 layout
                 className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 sm:gap-5 md:gap-8"
               >
                 <AnimatePresence mode="popLayout">
                   {displayed.map((event) => (
-                    <EventCard 
-                      key={event._id || event.id} 
-                      {...event} 
+                    <EventCard
+                      key={event._id || event.id}
+                      {...event}
                       onRegister={handleRegisterClick}
                     />
                   ))}
@@ -435,7 +434,7 @@ export default function Workshop() {
         </div>
       </div>
 
-      <RegistrationModal 
+      <RegistrationModal
         isOpen={isModalOpen}
         onClose={() => setIsModalOpen(false)}
         eventTitle={selectedEvent?.title}
@@ -445,42 +444,7 @@ export default function Workshop() {
       />
 
       {/* ── CTA Section ── */}
-      <motion.section 
-        initial={{ opacity: 0 }}
-        whileInView={{ opacity: 1 }}
-        transition={{ duration: 1 }}
-        viewport={{ once: true }}
-        className="bg-gradient-to-r from-[#14627a] to-[#0183AB] py-16 sm:py-20 md:py-24 px-4 sm:px-6 lg:px-8 mt-auto"
-      >
-        <div className="max-w-4xl mx-auto text-center">
-          <motion.h2 
-            initial={{ y: 20, opacity: 0 }}
-            whileInView={{ y: 0, opacity: 1 }}
-            transition={{ delay: 0.2 }}
-            viewport={{ once: true }}
-            className="font-['Public_Sans:SemiBold',sans-serif] text-[24px] sm:text-[32px] md:text-[38px] lg:text-[40px] text-white leading-tight mb-4 sm:mb-6"
-          >
-            Don't Miss Our Upcoming Events
-          </motion.h2>
-          <motion.p 
-            initial={{ y: 20, opacity: 0 }}
-            whileInView={{ y: 0, opacity: 1 }}
-            transition={{ delay: 0.4 }}
-            viewport={{ once: true }}
-            className="font-['Public_Sans:Regular',sans-serif] text-[14px] sm:text-[16px] md:text-[18px] text-white/90 mb-8 sm:mb-10"
-          >
-            Register now to secure your spot and be part of our vibrant learning community
-          </motion.p>
-          <motion.button 
-            onClick={handleRegisterClick}
-            whileHover={{ scale: 1.05, backgroundColor: "#ffd194" }}
-            whileTap={{ scale: 0.95 }}
-            className="bg-[#ffc27a] text-[#14627a] px-10 sm:px-12 py-4 sm:py-5 rounded-xl font-bold text-[16px] sm:text-[18px] transition-all shadow-xl"
-          >
-            Register for Events
-          </motion.button>
-        </div>
-      </motion.section>
+
 
       <Footer />
     </div>

@@ -17,6 +17,7 @@ const blogRoutes = require('./routes/blogRoutes');
 const categoryRoutes = require('./routes/categoryRoutes');
 const adminRoutes = require('./routes/adminRoutes');
 const siteSettingsRoutes = require('./routes/siteSettings');
+const instructorRoutes = require('./routes/instructorRoutes');
 
 
 const app = express();
@@ -194,6 +195,7 @@ app.use('/api/blog', blogRoutes);
 app.use('/api/categories', categoryRoutes);
 app.use('/api/admin', adminRoutes);
 app.use('/api/settings', siteSettingsRoutes);
+app.use('/api/instructors', instructorRoutes);
 
 
 // Error handler

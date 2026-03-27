@@ -11,7 +11,7 @@ function ArrowUpRightIcon({ color = "#6D737A" }) {
   );
 }
 
-export default function CourseCard({ course, index, highlighted = false }) {
+export default function CourseCard({ course, index }) {
   const { id, title, category, price, rating, reviews, image, description } = course;
   return (
     <motion.div
@@ -59,11 +59,8 @@ export default function CourseCard({ course, index, highlighted = false }) {
                 </span>
               </div>
               <motion.div
-                className={`flex items-center gap-2 px-4 py-2.5 rounded-xl font-bold text-sm ${highlighted
-                  ? "bg-[#14627a] text-white shadow-[0_10px_20px_rgba(20,98,122,0.3)]"
-                  : "bg-[#06213d] text-white shadow-[0_4px_12px_rgba(0,0,0,0.2)]"
-                  }`}
-                whileHover={{ scale: 1.05, backgroundColor: highlighted ? "#0e4a5c" : "#14627a" }}
+                className="flex items-center gap-2 px-4 py-2.5 rounded-xl font-bold text-sm bg-[#06213d] text-white shadow-[0_4px_12px_rgba(0,0,0,0.2)]"
+                whileHover={{ scale: 1.05, backgroundColor: "#14627a" }}
                 whileTap={{ scale: 0.95 }}
               >
                 <span>Enroll Now</span>

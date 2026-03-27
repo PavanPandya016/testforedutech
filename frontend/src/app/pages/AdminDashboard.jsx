@@ -5,7 +5,7 @@ import {
   Settings, LogOut, Search, Plus, MoreVertical,
   CheckCircle, XCircle, Clock, Trash2, Edit, ExternalLink,
   BarChart3, TrendingUp, UserPlus, AlertCircle, Star, Save, Image as ImageIcon,
-  Tag
+  Tag, UserCog
 } from 'lucide-react';
 import { useNavigate, Link } from 'react-router-dom';
 import Header from '../components/ui/Header';
@@ -41,7 +41,7 @@ const StatCard = ({ title, value, icon: Icon, trend, color }) => (
 
 export default function AdminDashboard() {
   const [activeTab, setActiveTab] = useState('overview');
-  const [stats, setStats] = useState({ users: 0, courses: 0, events: 0, blogs: 0 });
+  const [stats, setStats] = useState({ users: 0, courses: 0, events: 0, blogs: 0, instructors: 0 });
   const [users, setUsers] = useState([]);
   const [entities, setEntities] = useState([]);
   const [siteSettings, setSiteSettings] = useState({ heroImages: [], featuredCourseIds: [] });
@@ -52,6 +52,22 @@ export default function AdminDashboard() {
   const [participants, setParticipants] = useState([]);
   const [selectedEvent, setSelectedEvent] = useState(null);
   const [isParticipantsLoading, setIsParticipantsLoading] = useState(false);
+  const [isAddingInstructor, setIsAddingInstructor] = useState(false);
+  const [editingInstructor, setEditingInstructor] = useState(null);
+  const [newInstructor, setNewInstructor] = useState({ name: '', studyArea: '', img: '' });
+
+  const [isUserModalOpen, setIsUserModalOpen] = useState(false);
+  const [editingUser, setEditingUser] = useState(null);
+  const [userFormData, setUserFormData] = useState({
+    firstName: '',
+    lastName: '',
+    email: '',
+    username: '',
+    phone: '',
+    role: 'student',
+    password: '',
+    isActive: true
+  });
 
   const navigate = useNavigate();
 
@@ -102,7 +118,73 @@ export default function AdminDashboard() {
       await adminService.updateUser(userId, { role: newRole });
       setUsers(users.map(u => u._id === userId ? { ...u, role: newRole } : u));
     } catch (error) {
+      console.error('Failed to update user role:', error);
       alert('Failed to update user role');
+    }
+  };
+
+  const handleStatusToggle = async (userId, currentStatus) => {
+    try {
+      const newStatus = !currentStatus;
+      await adminService.updateUser(userId, { isActive: newStatus });
+      setUsers(users.map(u => u._id === userId ? { ...u, isActive: newStatus } : u));
+    } catch (error) {
+      console.error('Failed to update user status:', error);
+      alert('Failed to update account status');
+    }
+  };
+
+  const handleOpenUserModal = (user = null) => {
+    if (user) {
+      setEditingUser(user);
+      setUserFormData({
+        firstName: user.firstName || '',
+        lastName: user.lastName || '',
+        email: user.email || '',
+        username: user.username || '',
+        phone: user.phone || '',
+        role: user.role || 'student',
+        password: '',
+        isActive: user.isActive !== false
+      });
+    } else {
+      setEditingUser(null);
+      setUserFormData({
+        firstName: '',
+        lastName: '',
+        email: '',
+        username: '',
+        phone: '',
+        role: 'student',
+        password: '',
+        isActive: true
+      });
+    }
+    setIsUserModalOpen(true);
+  };
+
+  const handleSaveUser = async (e) => {
+    e && e.preventDefault();
+    try {
+      const data = { ...userFormData };
+      // Generate username if empty for new user
+      if (!editingUser && !data.username) {
+        data.username = data.email.split('@')[0].toLowerCase().replace(/[^a-z0-9]/g, '') + Math.floor(Math.random() * 1000);
+      }
+      
+      if (editingUser) {
+        // Only include password if it was changed
+        if (!data.password) delete data.password;
+        await adminService.updateUser(editingUser._id, data);
+      } else {
+        await adminService.createUser(data);
+      }
+      
+      setIsUserModalOpen(false);
+      fetchInitialData();
+    } catch (error) {
+      console.error('Failed to save user:', error);
+      alert('Failed to save user: ' + (error.data?.error || error.message));
     }
   };
 
@@ -157,14 +239,21 @@ export default function AdminDashboard() {
 
   const [uploadingIndex, setUploadingIndex] = useState(null);
 
-  const handleFileUpload = async (index, file) => {
+  const handleFileUpload = async (file, type, index = null) => {
     if (!file) return;
 
-    setUploadingIndex(index);
+    const uploadKey = type === 'hero' ? `hero-${index}` : 'cta';
+    setUploadingIndex(uploadKey);
     try {
       const response = await adminService.uploadImage(file);
       if (response.success) {
-        handleHeroImageChange(index, response.filepath);
+        if (type === 'hero') {
+          handleHeroImageChange(index, response.filepath);
+        } else if (type === 'cta') {
+          handleCtaImageChange(response.filepath);
+        } else if (type === 'instructor') {
+          handleUpdateInstructor(index, { img: response.filepath });
+        }
       }
     } catch (error) {
       console.error('Upload failed:', error);
@@ -180,6 +269,10 @@ export default function AdminDashboard() {
     setSiteSettings({ ...siteSettings, heroImages: newImages });
   };
 
+  const handleCtaImageChange = (value) => {
+    setSiteSettings({ ...siteSettings, ctaImage: value });
+  };
+
   const handleEditEntity = (type, item) => {
     const id = item._id || item.id;
     if (type === 'blogs') {
@@ -188,13 +281,47 @@ export default function AdminDashboard() {
       navigate(`/admin/events/edit/${id}`);
     } else if (type === 'courses') {
       navigate(`/admin/courses/edit/${id}`);
+    } else if (type === 'instructors') {
+      window.scrollTo({ top: 0, behavior: 'smooth' });
+      setIsAddingInstructor(true);
+      setEditingInstructor(item);
+      setNewInstructor({ name: item.name, studyArea: item.studyArea, img: item.img });
     } else if (type === 'categories') {
       const newName = prompt('Enter new category name:', item.name);
       if (newName && newName !== item.name) {
         handleUpdateCategory(id, newName);
       }
+    } else if (type === 'users') {
+      handleOpenUserModal(item);
     } else {
       alert(`Editing ${type} is not implemented yet.`);
+    }
+  };
+
+  const handleCreateInstructor = async (data) => {
+    try {
+      if (editingInstructor) {
+        await adminService.updateEntity('instructors', editingInstructor._id, data || newInstructor);
+      } else {
+        await adminService.createEntity('instructors', data || newInstructor);
+      }
+      fetchInitialData();
+      setIsAddingInstructor(false);
+      setEditingInstructor(null);
+      setNewInstructor({ name: '', studyArea: '', img: '' });
+    } catch (error) {
+      console.error('Failed to save instructor:', error);
+      alert('Failed to save instructor');
+    }
+  };
+
+  const handleUpdateInstructor = async (id, data) => {
+    try {
+      await adminService.updateEntity('instructors', id, data);
+      fetchInitialData();
+    } catch (error) {
+      console.error('Failed to update instructor:', error);
+      alert('Failed to update instructor');
     }
   };
 
@@ -286,6 +413,12 @@ export default function AdminDashboard() {
               active={activeTab === 'categories'}
               onClick={() => setActiveTab('categories')}
             />
+            <SidebarItem
+              icon={UserCog}
+              label="Instructors"
+              active={activeTab === 'instructors'}
+              onClick={() => setActiveTab('instructors')}
+            />
           </nav>
 
           <div className="mt-auto pt-6 border-t border-gray-100">
@@ -336,6 +469,12 @@ export default function AdminDashboard() {
                         const name = prompt('Enter new category name:');
                         if (name) handleCreateCategory(name);
                       }
+                      else if (activeTab === 'instructors') {
+                        setIsAddingInstructor(!isAddingInstructor);
+                      }
+                      else if (activeTab === 'users') {
+                        handleOpenUserModal();
+                      }
                       else alert(`Creating ${activeTab} is not implemented yet.`);
                     }}
                     className="bg-[#14627a] text-white p-2 rounded-lg hover:bg-[#0f4a5b] transition-colors shadow-sm"
@@ -366,6 +505,84 @@ export default function AdminDashboard() {
                   exit={{ opacity: 0, y: -10 }}
                   transition={{ duration: 0.2 }}
                 >
+                  {activeTab === 'instructors' && isAddingInstructor && (
+                    <motion.div
+                      initial={{ opacity: 0, height: 0 }}
+                      animate={{ opacity: 1, height: 'auto' }}
+                      exit={{ opacity: 0, height: 0 }}
+                      className="mb-8 bg-white p-6 rounded-2xl border border-[#14627a]/20 shadow-sm"
+                    >
+                      <div className="flex items-center gap-4 mb-4">
+                        <div className="p-2 bg-[#14627a]/10 rounded-lg text-[#14627a]">
+                          <UserPlus className="w-5 h-5" />
+                        </div>
+                        <h4 className="font-bold text-gray-900">{editingInstructor ? 'Edit' : 'Add New'} Instructor</h4>
+                      </div>
+                      <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                        <input
+                          type="text"
+                          placeholder="Instructor Name"
+                          value={newInstructor.name}
+                          onChange={(e) => setNewInstructor({ ...newInstructor, name: e.target.value })}
+                          className="px-4 py-2 border border-gray-200 rounded-lg text-sm focus:ring-2 focus:ring-[#14627a]/20 outline-none"
+                        />
+                        <input
+                          type="text"
+                          placeholder="Study Area (e.g. Web Design)"
+                          value={newInstructor.studyArea}
+                          onChange={(e) => setNewInstructor({ ...newInstructor, studyArea: e.target.value })}
+                          className="px-4 py-2 border border-gray-200 rounded-lg text-sm focus:ring-2 focus:ring-[#14627a]/20 outline-none"
+                        />
+                        <div className="flex items-center gap-2">
+                          <input
+                            type="text"
+                            placeholder="Image URL or upload ->"
+                            value={newInstructor.img}
+                            onChange={(e) => setNewInstructor({ ...newInstructor, img: e.target.value })}
+                            className="flex-1 px-4 py-2 border border-gray-200 rounded-lg text-sm focus:ring-2 focus:ring-[#14627a]/20 outline-none"
+                          />
+                          <label className="p-2 bg-gray-100 hover:bg-gray-200 rounded-lg cursor-pointer transition-colors">
+                            <ImageIcon className="w-5 h-5 text-gray-600" />
+                            <input
+                              type="file"
+                              className="hidden"
+                              accept="image/*"
+                              onChange={async (e) => {
+                                const file = e.target.files[0];
+                                if (file) {
+                                  try {
+                                    const res = await adminService.uploadImage(file);
+                                    if (res.success) setNewInstructor({ ...newInstructor, img: res.filepath });
+                                  } catch (err) {
+                                    alert('Upload failed');
+                                  }
+                                }
+                              }}
+                            />
+                          </label>
+                        </div>
+                      </div>
+                      <div className="flex justify-end gap-3 mt-6">
+                        <button
+                          onClick={() => {
+                            setIsAddingInstructor(false);
+                            setEditingInstructor(null);
+                            setNewInstructor({ name: '', studyArea: '', img: '' });
+                          }}
+                          className="px-4 py-2 text-gray-500 hover:text-gray-700 font-medium transition-colors"
+                        >
+                          Cancel
+                        </button>
+                        <button
+                          onClick={() => handleCreateInstructor()}
+                          className="px-6 py-2 bg-[#14627a] text-white rounded-lg font-bold hover:bg-[#0f4a5b] transition-all"
+                        >
+                          {editingInstructor ? 'Update' : 'Save'} Instructor
+                        </button>
+                      </div>
+                    </motion.div>
+                  )}
+
                   {activeTab === 'settings' ? (
                     <div className="bg-white p-8 rounded-2xl border border-gray-100 shadow-sm max-w-4xl mx-auto">
                       <div className="mb-8 border-b border-gray-100 pb-6">
@@ -382,7 +599,7 @@ export default function AdminDashboard() {
                               <div className="flex items-center justify-between">
                                 <label className="text-xs font-bold text-gray-500 uppercase tracking-wider">Hero Image {index + 1} URL</label>
                                 <label className="cursor-pointer bg-[#14627a]/10 text-[#14627a] hover:bg-[#14627a]/20 px-3 py-1.5 rounded-lg text-xs font-bold flex items-center gap-2 transition-colors">
-                                  {uploadingIndex === index ? (
+                                  {uploadingIndex === `hero-${index}` ? (
                                     <div className="animate-spin rounded-full h-3 w-3 border-t-2 border-[#14627a]" />
                                   ) : (
                                     <Save className="w-3 h-3" />
@@ -392,7 +609,7 @@ export default function AdminDashboard() {
                                     type="file"
                                     className="hidden"
                                     accept="image/*"
-                                    onChange={(e) => handleFileUpload(index, e.target.files[0])}
+                                    onChange={(e) => handleFileUpload(e.target.files[0], 'hero', index)}
                                     disabled={uploadingIndex !== null}
                                   />
                                 </label>
@@ -410,7 +627,7 @@ export default function AdminDashboard() {
                               <p className="text-[10px] text-gray-400 italic">Recommended size: 500x500 pixels (Square)</p>
                             </div>
                             <div className="relative group border-2 border-dashed border-gray-100 rounded-2xl overflow-hidden aspect-video bg-gray-50">
-                              {uploadingIndex === index ? (
+                              {uploadingIndex === `hero-${index}` ? (
                                 <div className="absolute inset-0 z-20 bg-white/60 backdrop-blur-sm flex flex-col items-center justify-center gap-3">
                                   <div className="animate-spin rounded-full h-8 w-8 border-t-2 border-b-2 border-[#14627a]" />
                                   <span className="text-xs font-bold text-[#14627a] animate-pulse">Uploading to Cloudinary...</span>
@@ -427,6 +644,66 @@ export default function AdminDashboard() {
                             </div>
                           </div>
                         ))}
+                      </div>
+
+                      {/* CTA Section Configuration */}
+                      <div className="mt-12 pt-12 border-t border-gray-100">
+                        <div className="mb-8 pb-6">
+                          <h3 className="text-xl font-bold text-gray-900 flex items-center gap-2">
+                            <LayoutDashboard className="w-6 h-6 text-[#14627a]" /> CTA Section Configuration
+                          </h3>
+                          <p className="text-gray-500 text-sm mt-1">Manage the image and messaging for the bottom Call to Action section.</p>
+                        </div>
+
+                        <div className="grid grid-cols-1 md:grid-cols-2 gap-6 items-start">
+                          <div className="space-y-4">
+                            <div className="flex items-center justify-between">
+                              <label className="text-xs font-bold text-gray-500 uppercase tracking-wider">CTA Section Image URL</label>
+                              <label className="cursor-pointer bg-[#14627a]/10 text-[#14627a] hover:bg-[#14627a]/20 px-3 py-1.5 rounded-lg text-xs font-bold flex items-center gap-2 transition-colors">
+                                {uploadingIndex === 'cta' ? (
+                                  <div className="animate-spin rounded-full h-3 w-3 border-t-2 border-[#14627a]" />
+                                ) : (
+                                  <Save className="w-3 h-3" />
+                                )}
+                                Upload from Machine
+                                <input
+                                  type="file"
+                                  className="hidden"
+                                  accept="image/*"
+                                  onChange={(e) => handleFileUpload(e.target.files[0], 'cta')}
+                                  disabled={uploadingIndex !== null}
+                                />
+                              </label>
+                            </div>
+                            <div className="relative">
+                              <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
+                              <input
+                                type="text"
+                                value={siteSettings?.ctaImage || ''}
+                                onChange={(e) => handleCtaImageChange(e.target.value)}
+                                className="w-full pl-10 pr-4 py-3 bg-gray-50 border border-gray-200 rounded-xl focus:ring-2 focus:ring-[#14627a]/20 outline-none text-sm"
+                                placeholder="https://images.unsplash.com/..."
+                              />
+                            </div>
+                            <p className="text-[10px] text-gray-400 italic">Recommended size: 500x500 pixels (Square)</p>
+                          </div>
+                          <div className="relative group border-2 border-dashed border-gray-100 rounded-2xl overflow-hidden aspect-video bg-gray-50">
+                            {uploadingIndex === 'cta' ? (
+                              <div className="absolute inset-0 z-20 bg-white/60 backdrop-blur-sm flex flex-col items-center justify-center gap-3">
+                                <div className="animate-spin rounded-full h-8 w-8 border-t-2 border-b-2 border-[#14627a]" />
+                                <span className="text-xs font-bold text-[#14627a] animate-pulse">Uploading to Cloudinary...</span>
+                              </div>
+                            ) : null}
+                            {siteSettings?.ctaImage ? (
+                              <img src={siteSettings.ctaImage} alt="CTA Section" className="w-full h-full object-cover transition-transform group-hover:scale-105" />
+                            ) : (
+                              <div className="flex flex-col items-center justify-center h-full text-gray-400">
+                                <ImageIcon className="w-8 h-8 mb-2 opacity-50" />
+                                <span className="text-xs font-medium">No preview available</span>
+                              </div>
+                            )}
+                          </div>
+                        </div>
                       </div>
 
                       <div className="mt-12 flex justify-end pt-8 border-t border-gray-50">
@@ -470,21 +747,17 @@ export default function AdminDashboard() {
                           trend={8}
                           color="bg-green-50 text-green-600"
                         />
+                        <StatCard
+                          title="Instructors"
+                          value={stats.instructors || 0}
+                          icon={UserCog}
+                          trend={0}
+                          color="bg-red-50 text-red-600"
+                        />
                       </div>
 
                       {/* Middle Section */}
-                      <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
-                        <div className="lg:col-span-2 bg-white p-6 rounded-2xl border border-gray-100 shadow-sm">
-                          <h3 className="text-lg font-bold text-gray-900 mb-6 flex items-center gap-2">
-                            <TrendingUp className="w-5 h-5 text-[#14627a]" /> Platform Growth
-                          </h3>
-                          <div className="h-64 flex items-center justify-center bg-gray-50 rounded-xl border border-dashed border-gray-200">
-                            <p className="text-gray-400 italic">Analytical data visualization pending...</p>
-                          </div>
-                        </div>
 
-
-                      </div>
                     </div>
                   ) : (
                     /* Table View for Users/Blogs/Courses/Events */
@@ -494,12 +767,13 @@ export default function AdminDashboard() {
                           <thead>
                             <tr className="bg-gray-50 border-b border-gray-100">
                               <th className="px-6 py-4 text-xs font-bold text-gray-500 uppercase tracking-wider">
-                                {activeTab === 'users' ? 'User' : 'Title'}
+                                {activeTab === 'users' ? 'User' : activeTab === 'instructors' ? 'Instructor' : 'Title'}
                               </th>
                               <th className="px-6 py-4 text-xs font-bold text-gray-500 uppercase tracking-wider">
-                                {activeTab === 'users' ? 'Role' : 'Category / Author'}
+                                {activeTab === 'users' ? 'Role' : activeTab === 'instructors' ? 'Study Area' : 'Category / Author'}
                               </th>
                               <th className="px-6 py-4 text-xs font-bold text-gray-500 uppercase tracking-wider">Status</th>
+                              {activeTab === 'events' && <th className="px-6 py-4 text-xs font-bold text-gray-500 uppercase tracking-wider">Location</th>}
                               {activeTab === 'courses' && <th className="px-6 py-4 text-xs font-bold text-gray-500 uppercase tracking-wider">Featured</th>}
                               <th className="px-6 py-4 text-xs font-bold text-gray-500 uppercase tracking-wider text-right">Actions</th>
                             </tr>
@@ -509,21 +783,51 @@ export default function AdminDashboard() {
                               <tr key={item._id} className="hover:bg-[#f8fafc]/50 transition-colors">
                                 <td className="px-6 py-4">
                                   <div className="flex items-center gap-3">
-                                    <div className="w-10 h-10 rounded-full bg-[#14627a]/10 flex items-center justify-center text-[#14627a] font-bold text-sm">
-                                      {(item.firstName || item.title || item.name || 'E').charAt(0)}
+                                    <div className="w-10 h-10 rounded-full bg-[#14627a]/10 flex items-center justify-center text-[#14627a] font-bold text-sm overflow-hidden relative group/img">
+                                      {activeTab === 'instructors' && item.img ? (
+                                        <>
+                                          <img src={item.img} alt={item.name} className="w-full h-full object-cover" />
+                                          <label className="absolute inset-0 bg-black/40 flex items-center justify-center opacity-0 group-hover/img:opacity-100 cursor-pointer transition-opacity">
+                                            <ImageIcon className="w-4 h-4 text-white" />
+                                            <input
+                                              type="file"
+                                              className="hidden"
+                                              accept="image/*"
+                                              onChange={(e) => handleFileUpload(e.target.files[0], 'instructor', item._id || item.id)}
+                                            />
+                                          </label>
+                                        </>
+                                      ) : (
+                                        (item.firstName || item.title || item.name || 'E').charAt(0)
+                                      )}
                                     </div>
                                     <div>
                                       <p className="text-sm font-bold text-gray-900 line-clamp-1">
-                                        {activeTab === 'users' ? `${item.firstName} ${item.lastName}` : (item.title || item.name)}
+                                        {activeTab === 'users' ? `${item.firstName} ${item.lastName}` : (item.title || item.name || 'Unnamed')}
                                       </p>
-                                      {activeTab === 'users' && <p className="text-xs text-gray-500">{item.email}</p>}
+                                      {activeTab === 'users' && (
+                                        <div className="flex flex-col gap-0.5 mt-0.5">
+                                          <p className="text-xs text-gray-500">{item.email}</p>
+                                          <p className="text-[10px] text-gray-400 font-medium">{item.phone || 'No phone'}</p>
+                                        </div>
+                                      )}
                                       {activeTab === 'categories' && <p className="text-xs text-gray-500">slug: {item.slug}</p>}
                                     </div>
                                   </div>
                                 </td>
                                 <td className="px-6 py-4">
                                   <span className="text-sm font-medium text-gray-600 capitalize">
-                                    {activeTab === 'users' ? (item.role || 'User') : (
+                                    {activeTab === 'users' ? (
+                                      <select
+                                        value={item.role || 'student'}
+                                        onChange={(e) => handleRoleUpdate(item._id, e.target.value)}
+                                        className="bg-gray-50 border border-gray-200 text-gray-700 text-xs font-bold rounded-lg focus:ring-[#14627a] focus:border-[#14627a] block w-full p-2 outline-none cursor-pointer hover:bg-white transition-colors"
+                                      >
+                                        <option value="student">Student</option>
+                                        <option value="instructor">Instructor</option>
+                                        <option value="admin">Admin</option>
+                                      </select>
+                                    ) : activeTab === 'instructors' ? (item.studyArea || 'General') : (
                                       <div className="flex flex-col">
                                         <span className="text-gray-900 font-medium">{(activeTab === 'courses' ? item.category?.name : '') || ''}</span>
                                         <span className="text-xs text-gray-500">{item.author?.firstName || item.instructor?.firstName || 'System'}</span>
@@ -532,13 +836,23 @@ export default function AdminDashboard() {
                                   </span>
                                 </td>
                                 <td className="px-6 py-4">
-                                  <div className="flex items-center gap-2">
+                                  <div
+                                    className={`flex items-center gap-2 group/status px-3 py-1.5 rounded-full w-fit transition-all ${activeTab === 'users' ? 'cursor-pointer hover:bg-white hover:shadow-sm border border-transparent hover:border-gray-100' : ''}`}
+                                    onClick={() => activeTab === 'users' && handleStatusToggle(item._id, item.isActive !== false)}
+                                  >
                                     <div className={`w-2 h-2 rounded-full ${(item.isActive !== false && item.status !== 'Draft') ? 'bg-green-500' : 'bg-red-500'}`} />
-                                    <span className="text-sm font-medium text-gray-700">
-                                      {item.status || (item.isActive !== false ? 'Active' : 'Inactive')}
+                                    <span className={`text-xs font-bold ${activeTab === 'users' ? 'text-gray-600 group-hover/status:text-[#14627a]' : 'text-gray-700'}`}>
+                                      {item.status || (item.isActive !== false ? 'Active' : 'Suspended')}
                                     </span>
                                   </div>
                                 </td>
+                                {activeTab === 'events' && (
+                                  <td className="px-6 py-4">
+                                    <span className="text-sm text-gray-500 italic">
+                                      {item.address || 'Online'}
+                                    </span>
+                                  </td>
+                                )}
                                 {activeTab === 'courses' && (
                                   <td className="px-6 py-4">
                                     <button
@@ -687,6 +1001,131 @@ export default function AdminDashboard() {
                 >
                   Close
                 </button>
+              </div>
+            </motion.div>
+          </div>
+        )}
+      </AnimatePresence>
+
+      {/* User Edit/Add Modal */}
+      <AnimatePresence>
+        {isUserModalOpen && (
+          <div className="fixed inset-0 z-[110] flex items-center justify-center p-4 bg-black/60 backdrop-blur-md">
+            <motion.div
+              initial={{ opacity: 0, scale: 0.9, y: 30 }}
+              animate={{ opacity: 1, scale: 1, y: 0 }}
+              exit={{ opacity: 0, scale: 0.9, y: 30 }}
+              className="bg-white rounded-[32px] p-8 max-w-2xl w-full shadow-2xl relative overflow-hidden"
+            >
+              {/* Decorative Background */}
+              <div className="absolute top-0 right-0 w-32 h-32 bg-[#14627a]/5 rounded-bl-full -z-0" />
+              
+              <div className="relative z-10">
+                <div className="flex justify-between items-center mb-10">
+                  <div>
+                    <h2 className="text-3xl font-extrabold text-gray-900">
+                      {editingUser ? 'Edit' : 'Create'} <span className="text-[#14627a]">User</span>
+                    </h2>
+                    <p className="text-gray-500 mt-1">Fill in the details below to {editingUser ? 'update' : 'add'} an account.</p>
+                  </div>
+                  <button onClick={() => setIsUserModalOpen(false)} className="p-3 hover:bg-gray-100 rounded-2xl transition-all">
+                    <XCircle className="w-6 h-6 text-gray-400" />
+                  </button>
+                </div>
+
+                <form onSubmit={handleSaveUser} className="space-y-6">
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-6">
+                    <div className="space-y-2">
+                      <label className="text-sm font-bold text-gray-700 ml-1">First Name</label>
+                      <input
+                        type="text"
+                        required
+                        value={userFormData.firstName}
+                        onChange={(e) => setUserFormData({ ...userFormData, firstName: e.target.value })}
+                        className="w-full px-4 py-3 bg-gray-50 border border-gray-200 rounded-xl focus:ring-2 focus:ring-[#14627a]/20 focus:border-[#14627a] outline-none transition-all"
+                        placeholder="e.g. John"
+                      />
+                    </div>
+                    <div className="space-y-2">
+                      <label className="text-sm font-bold text-gray-700 ml-1">Last Name</label>
+                      <input
+                        type="text"
+                        required
+                        value={userFormData.lastName}
+                        onChange={(e) => setUserFormData({ ...userFormData, lastName: e.target.value })}
+                        className="w-full px-4 py-3 bg-gray-50 border border-gray-200 rounded-xl focus:ring-2 focus:ring-[#14627a]/20 focus:border-[#14627a] outline-none transition-all"
+                        placeholder="e.g. Doe"
+                      />
+                    </div>
+                  </div>
+
+                  <div className="space-y-2">
+                    <label className="text-sm font-bold text-gray-700 ml-1">Email Address</label>
+                    <input
+                      type="email"
+                      required
+                      value={userFormData.email}
+                      onChange={(e) => setUserFormData({ ...userFormData, email: e.target.value })}
+                      className="w-full px-4 py-3 bg-gray-50 border border-gray-200 rounded-xl focus:ring-2 focus:ring-[#14627a]/20 focus:border-[#14627a] outline-none transition-all"
+                      placeholder="john.doe@example.com"
+                    />
+                  </div>
+
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-6">
+                    <div className="space-y-2">
+                      <label className="text-sm font-bold text-gray-700 ml-1">Phone Number</label>
+                      <input
+                        type="tel"
+                        value={userFormData.phone}
+                        onChange={(e) => setUserFormData({ ...userFormData, phone: e.target.value })}
+                        className="w-full px-4 py-3 bg-gray-50 border border-gray-200 rounded-xl focus:ring-2 focus:ring-[#14627a]/20 focus:border-[#14627a] outline-none transition-all"
+                        placeholder="+1 (555) 000-0000"
+                      />
+                    </div>
+                    <div className="space-y-2">
+                      <label className="text-sm font-bold text-gray-700 ml-1">Account Role</label>
+                      <select
+                        value={userFormData.role}
+                        onChange={(e) => setUserFormData({ ...userFormData, role: e.target.value })}
+                        className="w-full px-4 py-3 bg-gray-50 border border-gray-200 rounded-xl focus:ring-2 focus:ring-[#14627a]/20 focus:border-[#14627a] outline-none transition-all cursor-pointer"
+                      >
+                        <option value="student">Student</option>
+                        <option value="instructor">Instructor</option>
+                        <option value="admin">Administrator</option>
+                      </select>
+                    </div>
+                  </div>
+
+                  <div className="space-y-2">
+                    <label className="text-sm font-bold text-gray-700 ml-1">
+                      {editingUser ? 'New Password (Optional)' : 'Password'}
+                    </label>
+                    <input
+                      type="password"
+                      required={!editingUser}
+                      value={userFormData.password}
+                      onChange={(e) => setUserFormData({ ...userFormData, password: e.target.value })}
+                      className="w-full px-4 py-3 bg-gray-50 border border-gray-200 rounded-xl focus:ring-2 focus:ring-[#14627a]/20 focus:border-[#14627a] outline-none transition-all"
+                      placeholder={editingUser ? "Leave empty to keep current" : "Minimum 6 characters"}
+                    />
+                  </div>
+
+                  <div className="pt-6 flex justify-end gap-4">
+                    <button
+                      type="button"
+                      onClick={() => setIsUserModalOpen(false)}
+                      className="px-6 py-3 font-bold text-gray-500 hover:text-gray-700 transition-colors"
+                    >
+                      Cancel
+                    </button>
+                    <button
+                      type="submit"
+                      className="bg-[#14627a] text-white px-8 py-3 rounded-xl font-bold hover:bg-[#0f4a5b] transition-all shadow-lg hover:shadow-[#14627a]/25 flex items-center gap-2"
+                    >
+                      <Save className="w-4 h-4" /> {editingUser ? 'Update User' : 'Create Account'}
+                    </button>
+                  </div>
+                </form>
               </div>
             </motion.div>
           </div>

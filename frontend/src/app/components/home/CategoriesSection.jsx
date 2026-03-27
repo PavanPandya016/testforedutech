@@ -108,24 +108,26 @@ export default function CategoriesSection() {
                       }}
                       transition={{ type: "spring", stiffness: 400, damping: 30 }}
                     >
-                      <div className="flex items-center gap-4">
-                        <i
-                          className={`${icon} text-2xl text-[#6d737a] transition-colors duration-100 group-hover:text-[#14627a]`}
-                          aria-hidden="true"
-                        />
-                        <div>
-                          <span className="block text-[18px] font-medium text-[#1b1d1f] transition-colors duration-100 group-hover:text-[#14627a]">
+                      <div className="flex items-center gap-4 min-w-0">
+                        <div className="flex-shrink-0 w-8 h-8 flex items-center justify-center">
+                          <i
+                            className={`${icon} text-2xl text-[#6d737a] transition-colors duration-100 group-hover:text-[#14627a]`}
+                            aria-hidden="true"
+                          />
+                        </div>
+                        <div className="min-w-0">
+                          <span className="block text-[18px] font-medium text-[#1b1d1f] transition-colors duration-100 group-hover:text-[#14627a] truncate">
                             {category.name}
                           </span>
                           {category.courseCount > 0 && (
-                            <span className="text-[13px] text-[#6d737a]">
+                            <span className="text-[13px] text-[#6d737a] block truncate">
                               {category.courseCount} {category.courseCount === 1 ? "Course" : "Courses"}
                             </span>
                           )}
                         </div>
                       </div>
                       <div
-                        className="flex items-center justify-center w-11 h-11 rounded-lg p-2.5
+                        className="flex-shrink-0 flex items-center justify-center w-11 h-11 rounded-lg p-2.5
                            bg-white text-[#6d737a] shadow-[0px_3px_12px_0px_rgba(75,75,75,0.08)]
                            transition-colors duration-100 group-hover:bg-[#14627a]
                            group-hover:text-white"

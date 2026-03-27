@@ -4,7 +4,7 @@ const { protect, admin } = require('../middleware/auth');
 const { 
   getStats, getUsers, updateUser, deleteUser, getEntities, 
   deleteEntity, updateEntity, getEntityById, createEntity,
-  getEventParticipants
+  getEventParticipants, createUser
 } = require('../controllers/adminController');
 
 // All admin routes are protected and require admin role
@@ -18,6 +18,7 @@ router.use(admin);
 
 router.get('/stats', getStats);
 router.get('/users', getUsers);
+router.post('/users', createUser);
 router.put('/users/:id', updateUser);
 router.delete('/users/:id', deleteUser);
 router.get('/participants/event/:id', getEventParticipants);

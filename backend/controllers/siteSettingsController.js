@@ -12,10 +12,15 @@ exports.getSettings = async (req, res) => {
 exports.updateSettings = async (req, res) => {
   try {
     let settings = await SiteSettings.findOne();
+    
+    // Create a copy of the request body and remove _id if it exists
+    const updateData = { ...req.body };
+    delete updateData._id;
+
     if (!settings) {
-      settings = new SiteSettings(req.body);
+      settings = new SiteSettings(updateData);
     } else {
-      Object.assign(settings, req.body);
+      Object.assign(settings, updateData);
     }
     await settings.save();
     res.json(settings);
