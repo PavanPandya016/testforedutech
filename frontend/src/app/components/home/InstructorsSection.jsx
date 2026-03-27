@@ -22,7 +22,7 @@ export default function InstructorsSection({ instructors }) {
         <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-5 gap-6">
           {instructors.map((instructor, index) => (
             <motion.div
-              key={instructor.id}
+              key={instructor._id || instructor.id}
               className="text-center"
               initial={{ opacity: 0, y: 20 }}
               whileInView={{ opacity: 1, y: 0 }}
@@ -36,10 +36,10 @@ export default function InstructorsSection({ instructors }) {
                 transition={{ duration: 0.3 }}
               >
                 <div className="w-full aspect-square rounded-lg overflow-hidden mb-4 bg-[#ececec]">
-                  <img src={instructor.image} alt={instructor.name} className="w-full h-full object-cover" loading="lazy" />
+                  <img src={instructor.img || instructor.image} alt={instructor.name} className="w-full h-full object-cover" loading="lazy" />
                 </div>
                 <h3 className="text-[18px] font-normal text-[#1b1d1f] mb-1">{instructor.name}</h3>
-                <p className="text-[14px] text-[#6d737a]">{instructor.specialty} Expert</p>
+                <p className="text-[14px] text-[#6d737a]">{instructor.studyArea || instructor.specialty} Expert</p>
               </motion.div>
             </motion.div>
           ))}

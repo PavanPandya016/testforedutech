@@ -27,8 +27,8 @@ function SpinningStarDecor({ className = "" }) {
   );
 }
 
-export default function CtaSection() {
-  const ctaImage = picsum("cta", 500, 500);
+export default function CtaSection({ image }) {
+  const ctaImage = image || picsum("cta", 500, 500);
 
   return (
     <section className="relative py-24 px-4 sm:px-6 lg:px-8 bg-[rgba(235,243,255,0.7)] overflow-hidden" aria-labelledby="cta-heading">
@@ -61,11 +61,11 @@ export default function CtaSection() {
             viewport={{ once: true }}
             transition={{ duration: 0.8 }}
           >
-            <h2 id="cta-heading" className="text-[32px] md:text-[40px] font-semibold text-[#06213d] leading-tight">
-              Join <span className="text-[#14627a]">the world's largest</span> learning platform today
+            <h2 className="text-[32px] md:text-[40px] font-semibold text-[#06213d] leading-tight">
+              Upgrade Your Skills with <span className="text-[#14627a]">Expert-Led Learning</span>
             </h2>
             <p className="text-[20px] md:text-[24px] text-[#06213d]">
-              Start learning by registering for free
+              Join thousands of learners and start building real-world skills today.
             </p>
             <motion.a
               href="/signup"

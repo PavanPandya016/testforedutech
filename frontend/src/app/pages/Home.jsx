@@ -12,22 +12,16 @@ import InstructorsSection from "../components/home/InstructorsSection";
 import CtaSection from "../components/home/CtaSection";
 import adminService from "../services/adminService";
 import courseService from "../services/courseService";
+import instructorService from "../services/instructorService";
 
 
-const picsum = (seed, w, h) => `https://picsum.photos/seed/${seed}/${w}/${h}`;
-const INSTRUCTORS = [
-  { id: 1, name: "Sarah Jones", specialty: "UI/UX Design", image: picsum("instructor1", 200, 200) },
-  { id: 2, name: "Michael Chen", specialty: "Social Media", image: picsum("instructor2", 200, 200) },
-  { id: 3, name: "Emily Davis", specialty: "Business Strategy", image: picsum("instructor3", 200, 200) },
-  { id: 4, name: "David Wilson", specialty: "Photography", image: picsum("instructor4", 200, 200) },
-  { id: 5, name: "Jessica Brown", specialty: "Music Production", image: picsum("instructor5", 200, 200) },
-];
 
 // ─── Home Page ────────────────────────────────────────────────────────────────
 
 export default function Home() {
   const [settings, setSettings] = useState(null);
   const [featuredCourses, setFeaturedCourses] = useState([]);
+  const [instructors, setInstructors] = useState([]);
 
   useEffect(() => {
     const fetchData = async () => {
@@ -36,6 +30,8 @@ export default function Home() {
         setSettings(sData || null);
         const cData = await courseService.getFeaturedCourses();
         setFeaturedCourses(cData);
+        const iData = await instructorService.getInstructors();
+        setInstructors(iData);
       } catch (err) {
         console.error("Home fetch error:", err);
       }
@@ -50,8 +46,8 @@ export default function Home() {
         <HeroSection images={settings?.heroImages} />
         <PopularCoursesSection courses={featuredCourses} />
         <CategoriesSection />
-        <InstructorsSection instructors={INSTRUCTORS} />
-        <CtaSection />
+        <InstructorsSection instructors={instructors} />
+        <CtaSection image={settings?.ctaImage} />
       </main>
       <Footer />
     </div>

@@ -1,5 +1,5 @@
 const asyncHandler = require('../middleware/asyncHandler');
-const { User, Course, Event, BlogPost, EventRegistration, Category, Tag } = require('../models');
+const { User, Course, Event, BlogPost, EventRegistration, Category, Tag, Instructor } = require('../models');
 
 // @desc    Get dashboard stats
 // @route   GET /api/admin/stats
@@ -19,7 +19,8 @@ exports.getStats = asyncHandler(async (req, res) => {
       users: userCount,
       courses: courseCount,
       events: eventCount,
-      blogs: blogCount
+      blogs: blogCount,
+      instructors: await Instructor.countDocuments()
     },
     recentUsers
   });
@@ -89,6 +90,9 @@ exports.getEntities = asyncHandler(async (req, res) => {
     case 'tags':
       data = await Tag.find().sort({ name: 1 });
       break;
+    case 'instructors':
+      data = await Instructor.find().sort({ createdAt: -1 });
+      break;
     default:
       return res.status(400).json({ success: false, error: 'Invalid entity type' });
   }
@@ -110,6 +114,7 @@ exports.getEntityById = asyncHandler(async (req, res) => {
     case 'blogs': model = BlogPost; break;
     case 'categories': model = Category; break;
     case 'tags': model = Tag; break;
+    case 'instructors': model = Instructor; break;
     default:
       return res.status(400).json({ success: false, error: 'Invalid entity type' });
   }
@@ -135,6 +140,7 @@ exports.deleteEntity = asyncHandler(async (req, res) => {
     case 'blogs': model = BlogPost; break;
     case 'categories': model = Category; break;
     case 'tags': model = Tag; break;
+    case 'instructors': model = Instructor; break;
     default:
       return res.status(400).json({ success: false, error: 'Invalid entity type' });
   }
@@ -161,6 +167,7 @@ exports.updateEntity = asyncHandler(async (req, res) => {
     case 'blogs': model = BlogPost; break;
     case 'categories': model = Category; break;
     case 'tags': model = Tag; break;
+    case 'instructors': model = Instructor; break;
     default:
       return res.status(400).json({ success: false, error: 'Invalid entity type' });
   }
@@ -186,6 +193,7 @@ exports.createEntity = asyncHandler(async (req, res) => {
     case 'blogs': model = BlogPost; break;
     case 'categories': model = Category; break;
     case 'tags': model = Tag; break;
+    case 'instructors': model = Instructor; break;
     default:
       return res.status(400).json({ success: false, error: 'Invalid entity type' });
   }

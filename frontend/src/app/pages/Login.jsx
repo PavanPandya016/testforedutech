@@ -14,7 +14,7 @@ export default function Login() {
       password: ''
     }
   });
-  
+
   const [focusedField, setFocusedField] = useState(null);
   const [submitSuccess, setSubmitSuccess] = useState(false);
   const [rememberMe, setRememberMe] = useState(false);
@@ -31,7 +31,7 @@ export default function Login() {
       if (rememberMe) {
         localStorage.setItem('rememberMe', 'true');
       }
-      
+
       setSubmitSuccess(true);
       setTimeout(() => navigate('/'), 1500);
     } catch (error) {
@@ -100,13 +100,13 @@ export default function Login() {
     <div className="bg-gradient-to-b from-[#f0f7fa] to-white flex flex-col min-h-screen">
       <style>{styles}</style>
       <Header />
-      
+
       <div className="flex-1 flex items-center justify-center px-4 py-12">
         <div className="w-full max-w-2xl">
           <div className="relative">
             {/* Animated background gradient */}
             <div className="absolute inset-0 bg-gradient-to-br from-[#14627a]/5 to-[#1a9b8e]/5 rounded-3xl blur-xl opacity-60"></div>
-            
+
             {/* Main Form Card */}
             <div className="relative bg-white rounded-3xl shadow-2xl p-8 md:p-12 border border-[#e0f2f7] overflow-hidden">
               {/* Decorative top border accent */}
@@ -155,7 +155,7 @@ export default function Login() {
                   <input
                     type="email"
                     id="email"
-                    {...register('email', { 
+                    {...register('email', {
                       required: 'Email is required',
                       pattern: {
                         value: /^[A-Z0-9._%+-]+@[A-Z0-9.-]+\.[A-Z]{2,}$/i,
@@ -164,9 +164,8 @@ export default function Login() {
                     })}
                     onFocus={() => setFocusedField('email')}
                     onBlur={() => setFocusedField(null)}
-                    className={`w-full px-5 py-4 border-2 rounded-xl font-['Public_Sans:Regular',sans-serif] text-[14px] md:text-[16px] text-[#363a3d] transition-all duration-300 ${
-                      focusedField === 'email' ? 'border-[#14627a] bg-[#f0f9fc]' : 'border-[#e7e9eb] bg-white hover:border-[#14627a]/50'
-                    } ${errors.email ? 'border-red-500' : ''} focus:outline-none`}
+                    className={`w-full px-5 py-4 border-2 rounded-xl font-['Public_Sans:Regular',sans-serif] text-[14px] md:text-[16px] text-[#363a3d] transition-all duration-300 ${focusedField === 'email' ? 'border-[#14627a] bg-[#f0f9fc]' : 'border-[#e7e9eb] bg-white hover:border-[#14627a]/50'
+                      } ${errors.email ? 'border-red-500' : ''} focus:outline-none`}
                     placeholder="Enter your email"
                   />
                   {errors.email && <p className="text-red-500 text-xs mt-1">{errors.email.message}</p>}
@@ -180,7 +179,7 @@ export default function Login() {
                   <input
                     type="password"
                     id="password"
-                    {...register('password', { 
+                    {...register('password', {
                       required: 'Password is required',
                       minLength: {
                         value: 6,
@@ -189,9 +188,8 @@ export default function Login() {
                     })}
                     onFocus={() => setFocusedField('password')}
                     onBlur={() => setFocusedField(null)}
-                    className={`w-full px-5 py-4 border-2 rounded-xl font-['Public_Sans:Regular',sans-serif] text-[14px] md:text-[16px] text-[#363a3d] transition-all duration-300 ${
-                      focusedField === 'password' ? 'border-[#14627a] bg-[#f0f9fc]' : 'border-[#e7e9eb] bg-white hover:border-[#14627a]/50'
-                    } ${errors.password ? 'border-red-500' : ''} focus:outline-none`}
+                    className={`w-full px-5 py-4 border-2 rounded-xl font-['Public_Sans:Regular',sans-serif] text-[14px] md:text-[16px] text-[#363a3d] transition-all duration-300 ${focusedField === 'password' ? 'border-[#14627a] bg-[#f0f9fc]' : 'border-[#e7e9eb] bg-white hover:border-[#14627a]/50'
+                      } ${errors.password ? 'border-red-500' : ''} focus:outline-none`}
                     placeholder="Enter your password"
                   />
                   {errors.password && <p className="text-red-500 text-xs mt-1">{errors.password.message}</p>}
@@ -200,11 +198,11 @@ export default function Login() {
                 {/* Remember Me & Forgot Password */}
                 <div className="form-field flex items-center justify-between">
                   <label className="flex items-center gap-2 cursor-pointer">
-                    <input 
-                      type="checkbox" 
+                    <input
+                      type="checkbox"
                       checked={rememberMe}
                       onChange={(e) => setRememberMe(e.target.checked)}
-                      className="w-5 h-5 text-[#14627a] border-2 border-[#e7e9eb] rounded-md focus:ring-[#14627a] cursor-pointer" 
+                      className="w-5 h-5 text-[#14627a] border-2 border-[#e7e9eb] rounded-md focus:ring-[#14627a] cursor-pointer"
                     />
                     <span className="font-['Public_Sans:Regular',sans-serif] text-[14px] text-[#6d737a]">Remember me</span>
                   </label>
@@ -237,15 +235,6 @@ export default function Login() {
                   <Link to="/signup" className="font-['Public_Sans:SemiBold',sans-serif] text-[#14627a] hover:text-[#0f4a5b] transition-colors hover:underline">
                     Create one now
                   </Link>
-                </p>
-              </div>
-
-              {/* Demo Credentials */}
-              <div className="mt-8 p-4 bg-blue-50 border border-blue-200 rounded-xl">
-                <p className="font-['Public_Sans:SemiBold',sans-serif] text-[13px] text-blue-900 mb-2">Demo Credentials:</p>
-                <p className="font-['Public_Sans:Regular',sans-serif] text-[12px] text-blue-800">
-                  <strong>Student:</strong> any-email@example.com<br/>
-                  <strong>Admin:</strong> admin@edutech.com
                 </p>
               </div>
             </div>

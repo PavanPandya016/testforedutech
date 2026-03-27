@@ -5,7 +5,7 @@ import {
   Settings, LogOut, Search, Plus, MoreVertical,
   CheckCircle, XCircle, Clock, Trash2, Edit, ExternalLink,
   BarChart3, TrendingUp, UserPlus, AlertCircle, Star, Save, Image as ImageIcon,
-  Tag
+  Tag, UserCog
 } from 'lucide-react';
 import { useNavigate, Link } from 'react-router-dom';
 import Header from '../components/ui/Header';
@@ -41,7 +41,7 @@ const StatCard = ({ title, value, icon: Icon, trend, color }) => (
 
 export default function AdminDashboard() {
   const [activeTab, setActiveTab] = useState('overview');
-  const [stats, setStats] = useState({ users: 0, courses: 0, events: 0, blogs: 0 });
+  const [stats, setStats] = useState({ users: 0, courses: 0, events: 0, blogs: 0, instructors: 0 });
   const [users, setUsers] = useState([]);
   const [entities, setEntities] = useState([]);
   const [siteSettings, setSiteSettings] = useState({ heroImages: [], featuredCourseIds: [] });
@@ -52,6 +52,9 @@ export default function AdminDashboard() {
   const [participants, setParticipants] = useState([]);
   const [selectedEvent, setSelectedEvent] = useState(null);
   const [isParticipantsLoading, setIsParticipantsLoading] = useState(false);
+  const [isAddingInstructor, setIsAddingInstructor] = useState(false);
+  const [editingInstructor, setEditingInstructor] = useState(null);
+  const [newInstructor, setNewInstructor] = useState({ name: '', studyArea: '', img: '' });
 
   const navigate = useNavigate();
 
@@ -157,14 +160,21 @@ export default function AdminDashboard() {
 
   const [uploadingIndex, setUploadingIndex] = useState(null);
 
-  const handleFileUpload = async (index, file) => {
+  const handleFileUpload = async (file, type, index = null) => {
     if (!file) return;
 
-    setUploadingIndex(index);
+    const uploadKey = type === 'hero' ? `hero-${index}` : 'cta';
+    setUploadingIndex(uploadKey);
     try {
       const response = await adminService.uploadImage(file);
       if (response.success) {
-        handleHeroImageChange(index, response.filepath);
+        if (type === 'hero') {
+          handleHeroImageChange(index, response.filepath);
+        } else if (type === 'cta') {
+          handleCtaImageChange(response.filepath);
+        } else if (type === 'instructor') {
+          handleUpdateInstructor(index, { img: response.filepath });
+        }
       }
     } catch (error) {
       console.error('Upload failed:', error);
@@ -180,6 +190,10 @@ export default function AdminDashboard() {
     setSiteSettings({ ...siteSettings, heroImages: newImages });
   };
 
+  const handleCtaImageChange = (value) => {
+    setSiteSettings({ ...siteSettings, ctaImage: value });
+  };
+
   const handleEditEntity = (type, item) => {
     const id = item._id || item.id;
     if (type === 'blogs') {
@@ -188,6 +202,11 @@ export default function AdminDashboard() {
       navigate(`/admin/events/edit/${id}`);
     } else if (type === 'courses') {
       navigate(`/admin/courses/edit/${id}`);
+    } else if (type === 'instructors') {
+      window.scrollTo({ top: 0, behavior: 'smooth' });
+      setIsAddingInstructor(true);
+      setEditingInstructor(item);
+      setNewInstructor({ name: item.name, studyArea: item.studyArea, img: item.img });
     } else if (type === 'categories') {
       const newName = prompt('Enter new category name:', item.name);
       if (newName && newName !== item.name) {
@@ -195,6 +214,33 @@ export default function AdminDashboard() {
       }
     } else {
       alert(`Editing ${type} is not implemented yet.`);
+    }
+  };
+
+  const handleCreateInstructor = async (data) => {
+    try {
+      if (editingInstructor) {
+        await adminService.updateEntity('instructors', editingInstructor._id, data || newInstructor);
+      } else {
+        await adminService.createEntity('instructors', data || newInstructor);
+      }
+      fetchInitialData();
+      setIsAddingInstructor(false);
+      setEditingInstructor(null);
+      setNewInstructor({ name: '', studyArea: '', img: '' });
+    } catch (error) {
+      console.error('Failed to save instructor:', error);
+      alert('Failed to save instructor');
+    }
+  };
+
+  const handleUpdateInstructor = async (id, data) => {
+    try {
+      await adminService.updateEntity('instructors', id, data);
+      fetchInitialData();
+    } catch (error) {
+      console.error('Failed to update instructor:', error);
+      alert('Failed to update instructor');
     }
   };
 
@@ -286,6 +332,12 @@ export default function AdminDashboard() {
               active={activeTab === 'categories'}
               onClick={() => setActiveTab('categories')}
             />
+            <SidebarItem
+              icon={UserCog}
+              label="Instructors"
+              active={activeTab === 'instructors'}
+              onClick={() => setActiveTab('instructors')}
+            />
           </nav>
 
           <div className="mt-auto pt-6 border-t border-gray-100">
@@ -336,6 +388,9 @@ export default function AdminDashboard() {
                         const name = prompt('Enter new category name:');
                         if (name) handleCreateCategory(name);
                       }
+                      else if (activeTab === 'instructors') {
+                        setIsAddingInstructor(!isAddingInstructor);
+                      }
                       else alert(`Creating ${activeTab} is not implemented yet.`);
                     }}
                     className="bg-[#14627a] text-white p-2 rounded-lg hover:bg-[#0f4a5b] transition-colors shadow-sm"
@@ -366,6 +421,84 @@ export default function AdminDashboard() {
                   exit={{ opacity: 0, y: -10 }}
                   transition={{ duration: 0.2 }}
                 >
+                  {activeTab === 'instructors' && isAddingInstructor && (
+                    <motion.div
+                      initial={{ opacity: 0, height: 0 }}
+                      animate={{ opacity: 1, height: 'auto' }}
+                      exit={{ opacity: 0, height: 0 }}
+                      className="mb-8 bg-white p-6 rounded-2xl border border-[#14627a]/20 shadow-sm"
+                    >
+                      <div className="flex items-center gap-4 mb-4">
+                        <div className="p-2 bg-[#14627a]/10 rounded-lg text-[#14627a]">
+                          <UserPlus className="w-5 h-5" />
+                        </div>
+                        <h4 className="font-bold text-gray-900">{editingInstructor ? 'Edit' : 'Add New'} Instructor</h4>
+                      </div>
+                      <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                        <input
+                          type="text"
+                          placeholder="Instructor Name"
+                          value={newInstructor.name}
+                          onChange={(e) => setNewInstructor({ ...newInstructor, name: e.target.value })}
+                          className="px-4 py-2 border border-gray-200 rounded-lg text-sm focus:ring-2 focus:ring-[#14627a]/20 outline-none"
+                        />
+                        <input
+                          type="text"
+                          placeholder="Study Area (e.g. Web Design)"
+                          value={newInstructor.studyArea}
+                          onChange={(e) => setNewInstructor({ ...newInstructor, studyArea: e.target.value })}
+                          className="px-4 py-2 border border-gray-200 rounded-lg text-sm focus:ring-2 focus:ring-[#14627a]/20 outline-none"
+                        />
+                        <div className="flex items-center gap-2">
+                          <input
+                            type="text"
+                            placeholder="Image URL or upload ->"
+                            value={newInstructor.img}
+                            onChange={(e) => setNewInstructor({ ...newInstructor, img: e.target.value })}
+                            className="flex-1 px-4 py-2 border border-gray-200 rounded-lg text-sm focus:ring-2 focus:ring-[#14627a]/20 outline-none"
+                          />
+                          <label className="p-2 bg-gray-100 hover:bg-gray-200 rounded-lg cursor-pointer transition-colors">
+                            <ImageIcon className="w-5 h-5 text-gray-600" />
+                            <input
+                              type="file"
+                              className="hidden"
+                              accept="image/*"
+                              onChange={async (e) => {
+                                const file = e.target.files[0];
+                                if (file) {
+                                  try {
+                                    const res = await adminService.uploadImage(file);
+                                    if (res.success) setNewInstructor({ ...newInstructor, img: res.filepath });
+                                  } catch (err) {
+                                    alert('Upload failed');
+                                  }
+                                }
+                              }}
+                            />
+                          </label>
+                        </div>
+                      </div>
+                      <div className="flex justify-end gap-3 mt-6">
+                        <button
+                          onClick={() => {
+                            setIsAddingInstructor(false);
+                            setEditingInstructor(null);
+                            setNewInstructor({ name: '', studyArea: '', img: '' });
+                          }}
+                          className="px-4 py-2 text-gray-500 hover:text-gray-700 font-medium transition-colors"
+                        >
+                          Cancel
+                        </button>
+                        <button
+                          onClick={() => handleCreateInstructor()}
+                          className="px-6 py-2 bg-[#14627a] text-white rounded-lg font-bold hover:bg-[#0f4a5b] transition-all"
+                        >
+                          {editingInstructor ? 'Update' : 'Save'} Instructor
+                        </button>
+                      </div>
+                    </motion.div>
+                  )}
+
                   {activeTab === 'settings' ? (
                     <div className="bg-white p-8 rounded-2xl border border-gray-100 shadow-sm max-w-4xl mx-auto">
                       <div className="mb-8 border-b border-gray-100 pb-6">
@@ -382,7 +515,7 @@ export default function AdminDashboard() {
                               <div className="flex items-center justify-between">
                                 <label className="text-xs font-bold text-gray-500 uppercase tracking-wider">Hero Image {index + 1} URL</label>
                                 <label className="cursor-pointer bg-[#14627a]/10 text-[#14627a] hover:bg-[#14627a]/20 px-3 py-1.5 rounded-lg text-xs font-bold flex items-center gap-2 transition-colors">
-                                  {uploadingIndex === index ? (
+                                  {uploadingIndex === `hero-${index}` ? (
                                     <div className="animate-spin rounded-full h-3 w-3 border-t-2 border-[#14627a]" />
                                   ) : (
                                     <Save className="w-3 h-3" />
@@ -392,7 +525,7 @@ export default function AdminDashboard() {
                                     type="file"
                                     className="hidden"
                                     accept="image/*"
-                                    onChange={(e) => handleFileUpload(index, e.target.files[0])}
+                                    onChange={(e) => handleFileUpload(e.target.files[0], 'hero', index)}
                                     disabled={uploadingIndex !== null}
                                   />
                                 </label>
@@ -410,7 +543,7 @@ export default function AdminDashboard() {
                               <p className="text-[10px] text-gray-400 italic">Recommended size: 500x500 pixels (Square)</p>
                             </div>
                             <div className="relative group border-2 border-dashed border-gray-100 rounded-2xl overflow-hidden aspect-video bg-gray-50">
-                              {uploadingIndex === index ? (
+                              {uploadingIndex === `hero-${index}` ? (
                                 <div className="absolute inset-0 z-20 bg-white/60 backdrop-blur-sm flex flex-col items-center justify-center gap-3">
                                   <div className="animate-spin rounded-full h-8 w-8 border-t-2 border-b-2 border-[#14627a]" />
                                   <span className="text-xs font-bold text-[#14627a] animate-pulse">Uploading to Cloudinary...</span>
@@ -427,6 +560,66 @@ export default function AdminDashboard() {
                             </div>
                           </div>
                         ))}
+                      </div>
+
+                      {/* CTA Section Configuration */}
+                      <div className="mt-12 pt-12 border-t border-gray-100">
+                        <div className="mb-8 pb-6">
+                          <h3 className="text-xl font-bold text-gray-900 flex items-center gap-2">
+                            <LayoutDashboard className="w-6 h-6 text-[#14627a]" /> CTA Section Configuration
+                          </h3>
+                          <p className="text-gray-500 text-sm mt-1">Manage the image and messaging for the bottom Call to Action section.</p>
+                        </div>
+
+                        <div className="grid grid-cols-1 md:grid-cols-2 gap-6 items-start">
+                          <div className="space-y-4">
+                            <div className="flex items-center justify-between">
+                              <label className="text-xs font-bold text-gray-500 uppercase tracking-wider">CTA Section Image URL</label>
+                              <label className="cursor-pointer bg-[#14627a]/10 text-[#14627a] hover:bg-[#14627a]/20 px-3 py-1.5 rounded-lg text-xs font-bold flex items-center gap-2 transition-colors">
+                                {uploadingIndex === 'cta' ? (
+                                  <div className="animate-spin rounded-full h-3 w-3 border-t-2 border-[#14627a]" />
+                                ) : (
+                                  <Save className="w-3 h-3" />
+                                )}
+                                Upload from Machine
+                                <input
+                                  type="file"
+                                  className="hidden"
+                                  accept="image/*"
+                                  onChange={(e) => handleFileUpload(e.target.files[0], 'cta')}
+                                  disabled={uploadingIndex !== null}
+                                />
+                              </label>
+                            </div>
+                            <div className="relative">
+                              <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
+                              <input
+                                type="text"
+                                value={siteSettings?.ctaImage || ''}
+                                onChange={(e) => handleCtaImageChange(e.target.value)}
+                                className="w-full pl-10 pr-4 py-3 bg-gray-50 border border-gray-200 rounded-xl focus:ring-2 focus:ring-[#14627a]/20 outline-none text-sm"
+                                placeholder="https://images.unsplash.com/..."
+                              />
+                            </div>
+                            <p className="text-[10px] text-gray-400 italic">Recommended size: 500x500 pixels (Square)</p>
+                          </div>
+                          <div className="relative group border-2 border-dashed border-gray-100 rounded-2xl overflow-hidden aspect-video bg-gray-50">
+                            {uploadingIndex === 'cta' ? (
+                              <div className="absolute inset-0 z-20 bg-white/60 backdrop-blur-sm flex flex-col items-center justify-center gap-3">
+                                <div className="animate-spin rounded-full h-8 w-8 border-t-2 border-b-2 border-[#14627a]" />
+                                <span className="text-xs font-bold text-[#14627a] animate-pulse">Uploading to Cloudinary...</span>
+                              </div>
+                            ) : null}
+                            {siteSettings?.ctaImage ? (
+                              <img src={siteSettings.ctaImage} alt="CTA Section" className="w-full h-full object-cover transition-transform group-hover:scale-105" />
+                            ) : (
+                              <div className="flex flex-col items-center justify-center h-full text-gray-400">
+                                <ImageIcon className="w-8 h-8 mb-2 opacity-50" />
+                                <span className="text-xs font-medium">No preview available</span>
+                              </div>
+                            )}
+                          </div>
+                        </div>
                       </div>
 
                       <div className="mt-12 flex justify-end pt-8 border-t border-gray-50">
@@ -470,6 +663,13 @@ export default function AdminDashboard() {
                           trend={8}
                           color="bg-green-50 text-green-600"
                         />
+                        <StatCard
+                          title="Instructors"
+                          value={stats.instructors || 0}
+                          icon={UserCog}
+                          trend={0}
+                          color="bg-red-50 text-red-600"
+                        />
                       </div>
 
                       {/* Middle Section */}
@@ -494,10 +694,10 @@ export default function AdminDashboard() {
                           <thead>
                             <tr className="bg-gray-50 border-b border-gray-100">
                               <th className="px-6 py-4 text-xs font-bold text-gray-500 uppercase tracking-wider">
-                                {activeTab === 'users' ? 'User' : 'Title'}
+                                {activeTab === 'users' ? 'User' : activeTab === 'instructors' ? 'Instructor' : 'Title'}
                               </th>
                               <th className="px-6 py-4 text-xs font-bold text-gray-500 uppercase tracking-wider">
-                                {activeTab === 'users' ? 'Role' : 'Category / Author'}
+                                {activeTab === 'users' ? 'Role' : activeTab === 'instructors' ? 'Study Area' : 'Category / Author'}
                               </th>
                               <th className="px-6 py-4 text-xs font-bold text-gray-500 uppercase tracking-wider">Status</th>
                               {activeTab === 'courses' && <th className="px-6 py-4 text-xs font-bold text-gray-500 uppercase tracking-wider">Featured</th>}
@@ -509,12 +709,27 @@ export default function AdminDashboard() {
                               <tr key={item._id} className="hover:bg-[#f8fafc]/50 transition-colors">
                                 <td className="px-6 py-4">
                                   <div className="flex items-center gap-3">
-                                    <div className="w-10 h-10 rounded-full bg-[#14627a]/10 flex items-center justify-center text-[#14627a] font-bold text-sm">
-                                      {(item.firstName || item.title || item.name || 'E').charAt(0)}
+                                    <div className="w-10 h-10 rounded-full bg-[#14627a]/10 flex items-center justify-center text-[#14627a] font-bold text-sm overflow-hidden relative group/img">
+                                      {activeTab === 'instructors' && item.img ? (
+                                        <>
+                                          <img src={item.img} alt={item.name} className="w-full h-full object-cover" />
+                                          <label className="absolute inset-0 bg-black/40 flex items-center justify-center opacity-0 group-hover/img:opacity-100 cursor-pointer transition-opacity">
+                                            <ImageIcon className="w-4 h-4 text-white" />
+                                            <input
+                                              type="file"
+                                              className="hidden"
+                                              accept="image/*"
+                                              onChange={(e) => handleFileUpload(e.target.files[0], 'instructor', item._id || item.id)}
+                                            />
+                                          </label>
+                                        </>
+                                      ) : (
+                                        (item.firstName || item.title || item.name || 'E').charAt(0)
+                                      )}
                                     </div>
                                     <div>
                                       <p className="text-sm font-bold text-gray-900 line-clamp-1">
-                                        {activeTab === 'users' ? `${item.firstName} ${item.lastName}` : (item.title || item.name)}
+                                      {activeTab === 'users' ? `${item.firstName} ${item.lastName}` : (item.title || item.name || 'Unnamed')}
                                       </p>
                                       {activeTab === 'users' && <p className="text-xs text-gray-500">{item.email}</p>}
                                       {activeTab === 'categories' && <p className="text-xs text-gray-500">slug: {item.slug}</p>}
@@ -523,7 +738,7 @@ export default function AdminDashboard() {
                                 </td>
                                 <td className="px-6 py-4">
                                   <span className="text-sm font-medium text-gray-600 capitalize">
-                                    {activeTab === 'users' ? (item.role || 'User') : (
+                                    {activeTab === 'users' ? (item.role || 'User') : activeTab === 'instructors' ? (item.studyArea || 'General') : (
                                       <div className="flex flex-col">
                                         <span className="text-gray-900 font-medium">{(activeTab === 'courses' ? item.category?.name : '') || ''}</span>
                                         <span className="text-xs text-gray-500">{item.author?.firstName || item.instructor?.firstName || 'System'}</span>
