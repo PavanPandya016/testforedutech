@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { Link, useNavigate } from 'react-router-dom';
+import { Link, useNavigate, useLocation } from 'react-router-dom';
 import { useForm } from 'react-hook-form';
 import Header from '../components/ui/Header';
 import Footer from '../components/ui/Footer';
@@ -8,6 +8,7 @@ import authService from '../services/authService';
 
 export default function Signup() {
   const navigate = useNavigate();
+  const location = useLocation();
   const { register, handleSubmit, watch, formState: { errors } } = useForm();
   const [signupError, setSignupError] = useState('');
   const [submitSuccess, setSubmitSuccess] = useState(false);
@@ -25,7 +26,12 @@ export default function Signup() {
       });
       
       setSubmitSuccess(true);
-      setTimeout(() => navigate('/'), 1500);
+      
+      // Determine redirect path
+      const params = new URLSearchParams(location.search);
+      const redirectPath = params.get('redirect') || '/';
+      
+      setTimeout(() => navigate(redirectPath), 1500);
     } catch (error) {
       console.error('Signup error:', error);
       setSignupError(error.message || 'Failed to create account. Please try again.');

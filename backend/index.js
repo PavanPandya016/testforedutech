@@ -159,6 +159,15 @@ app.use(async (req, res, next) => {
   next();
 });
 
+const session = require("express-session");
+
+app.use(
+  session({
+    secret: "supersecret",
+    resave: false,
+    saveUninitialized: true,
+  })
+);
 // Admin API
 const adminRouter = require('./admin/adminConfig');
 app.use('/admin', adminRouter);

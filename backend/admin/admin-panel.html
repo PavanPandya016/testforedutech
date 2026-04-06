@@ -455,7 +455,7 @@
 
     <script>
         let authHeader = '';
-        const API = window.location.origin;
+        const API = 'http://localhst:5000';
 
         function login() {
             const email = document.getElementById('loginEmail').value;
@@ -477,7 +477,7 @@
                     }
                 })
                 .catch(error => {
-                    err.textContent = 'Login failed: Invalid credentials or server error.';
+                    err.textContent = 'Server Unreachable: Please ensure backend is running or access via http://localhost:5000/admin-panel';
                     err.style.display = 'block';
                     console.error(error);
                 });

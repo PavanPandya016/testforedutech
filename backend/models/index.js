@@ -8,6 +8,8 @@ const EventRegistration = require('./EventRegistration');
 const BlogPost = require('./BlogPost');
 const { Category, Tag } = require('./CategoryTag');
 const Instructor = require('./Instructor');
+const CourseApplication = require('./CourseApplication');
+const ActivityLog = require('./ActivityLog');
 
 module.exports = {
   User,
@@ -20,5 +22,7 @@ module.exports = {
   BlogPost,
   Category,
   Tag,
-  Instructor
+  Instructor,
+  CourseApplication,
+  ActivityLog
 };

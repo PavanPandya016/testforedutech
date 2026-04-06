@@ -21,12 +21,25 @@ export default defineConfig({
   assetsInclude: ['**/*.svg', '**/*.csv'],
   
   build: {
-    outDir: 'build',
+    outDir: 'dist',
     rollupOptions: {
       output: {
-        manualChunks: {
-          vendor: ['react', 'react-dom', 'react-router-dom'],
-          ui: ['lucide-react', 'framer-motion']
+        manualChunks(id) {
+          if (id.includes('node_modules')) {
+            if (id.includes('@radix-ui')) {
+              return 'radix';
+            }
+            if (id.includes('@tiptap')) {
+              return 'editor';
+            }
+            if (id.includes('lucide-react') || id.includes('react-icons') || id.includes('@mui/icons-material')) {
+              return 'icons';
+            }
+            if (id.includes('framer-motion') || id.includes('motion')) {
+              return 'animations';
+            }
+            return 'vendor';
+          }
         }
       }
     }

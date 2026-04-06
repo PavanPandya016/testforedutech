@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useState, useEffect } from 'react';
 import { motion } from 'framer-motion';
 import { Link } from 'react-router-dom';
 import { 
@@ -14,6 +14,7 @@ import {
 } from 'lucide-react';
 import Header from '../components/ui/Header';
 import Footer from '../components/ui/Footer';
+import adminService from '../services/adminService';
 
 const fadeInUp = {
   initial: { opacity: 0, y: 20 },
@@ -23,13 +24,50 @@ const fadeInUp = {
 };
 
 export default function About() {
+  const [settings, setSettings] = useState(null);
+  const [stats, setStats] = useState({ users: 0, courses: 0, blogs: 0, events: 0 });
+
+  useEffect(() => {
+    const fetchData = async () => {
+      try {
+        const results = await Promise.allSettled([
+          adminService.getSiteSettings(),
+          adminService.getPublicStats()
+        ]);
+
+        // Handle Site Settings
+        if (results[0].status === 'fulfilled') {
+          setSettings(results[0].value || null);
+        }
+
+        // Handle Stats
+        if (results[1].status === 'fulfilled') {
+          const statsData = results[1].value;
+          setStats(statsData?.stats || { users: 0, courses: 0, blogs: 0, events: 0 });
+        } else {
+          console.warn("About page stats fetch failed, using default values.");
+        }
+      } catch (err) {
+        console.error("About page fetch error:", err);
+      }
+    };
+    fetchData();
+  }, []);
+
+  const displayStats = [
+    { icon: Users, value: stats.users ? `${stats.users.toLocaleString()}+` : '10,000+', label: 'Students' },
+    { icon: BookOpen, value: stats.courses ? `${stats.courses.toLocaleString()}+` : '200+', label: 'Courses' },
+    { icon: MessageSquare, value: stats.blogs ? `${stats.blogs.toLocaleString()}+` : '500+', label: 'Articles' },
+    { icon: Calendar, value: stats.events ? `${stats.events.toLocaleString()}+` : '100+', label: 'Events' }
+  ];
+
   return (
     <div className="bg-white min-h-screen font-outfit">
       <Header />
       
       <main>
         {/* Hero Section */}
-        <section className="py-16 px-4 bg-gray-50">
+        <section className="py-10 px-4 bg-gray-50">
           <div className="max-w-4xl mx-auto text-center">
             <motion.div
               initial={{ opacity: 0, y: 20 }}
@@ -40,20 +78,19 @@ export default function About() {
                 About <span className="text-[#14627a]">Us</span>
               </h1>
               <p className="text-lg text-gray-600 max-w-2xl mx-auto font-medium">
-                We provide quality education through expert-led courses, insightful blogs, 
-                and engaging events to help you achieve your learning goals.
+                {settings?.aboutHeroSubtitle || "We provide quality education through expert-led courses, insightful blogs, and engaging events to help you achieve your learning goals."}
               </p>
             </motion.div>
           </div>
         </section>
 
         {/* Mission Section */}
-        <section className="py-12 px-4 bg-white">
+        <section className="py-8 px-4 bg-white">
           <div className="max-w-4xl mx-auto">
             <motion.div {...fadeInUp} className="text-center mb-10">
               <h2 className="text-3xl font-black text-[#06213d] mb-3">Our Mission</h2>
               <p className="text-gray-600 max-w-2xl mx-auto font-medium">
-                To make quality education accessible to everyone through innovative learning experiences.
+                {settings?.missionText || "To make quality education accessible to everyone through innovative learning experiences."}
               </p>
             </motion.div>
 
@@ -93,7 +130,7 @@ export default function About() {
         </section>
 
         {/* What We Offer */}
-        <section className="py-12 px-4 bg-gray-50">
+        <section className="py-8 px-4 bg-gray-50">
           <div className="max-w-4xl mx-auto">
             <motion.div {...fadeInUp} className="text-center mb-10">
               <h2 className="text-3xl font-black text-[#06213d] mb-3">What We Offer</h2>
@@ -138,15 +175,10 @@ export default function About() {
         </section>
 
         {/* Stats */}
-        <section className="py-12 px-4 bg-white">
+        <section className="py-8 px-4 bg-white">
           <div className="max-w-4xl mx-auto">
             <div className="grid grid-cols-2 md:grid-cols-4 gap-6 text-center">
-              {[
-                { icon: Users, value: '10,000+', label: 'Students' },
-                { icon: BookOpen, value: '200+', label: 'Courses' },
-                { icon: MessageSquare, value: '500+', label: 'Articles' },
-                { icon: Calendar, value: '100+', label: 'Events' }
-              ].map((stat, index) => (
+              {displayStats.map((stat, index) => (
                 <motion.div
                   key={index}
                   {...fadeInUp}
@@ -163,7 +195,7 @@ export default function About() {
         </section>
 
         {/* Why Choose Us */}
-        <section className="py-12 px-4 bg-gray-50">
+        <section className="py-8 px-4 bg-gray-50">
           <div className="max-w-4xl mx-auto">
             <motion.div {...fadeInUp} className="text-center mb-8">
               <h2 className="text-3xl font-black text-[#06213d] mb-3">Why Choose Us</h2>
@@ -196,24 +228,24 @@ export default function About() {
         </section>
 
         {/* CTA */}
-        <section className="py-16 px-4 bg-white">
+        <section className="py-10 px-4 bg-white">
           <div className="max-w-2xl mx-auto text-center">
             <motion.div {...fadeInUp}>
               <h2 className="text-3xl font-black text-[#06213d] mb-4">
-                Start Your Learning Journey
+                {settings?.ctaTitle || "Start Your Learning Journey"}
               </h2>
               <p className="text-gray-600 mb-8 font-medium">
-                Join thousands of learners transforming their careers with our platform.
+                {settings?.ctaSubtitle || "Join thousands of learners transforming their careers with our platform."}
               </p>
-              <Link to="/courses" className="px-10 py-4 bg-[#14627a] text-white rounded-xl font-bold hover:bg-[#0f4a5b] transition-all shadow-lg hover:shadow-[#14627a]/20 inline-block">
-                Explore Courses
+              <Link to={settings?.ctaButtonLink || "/courses"} className="px-10 py-4 bg-[#14627a] text-white rounded-xl font-bold hover:bg-[#0f4a5b] transition-all shadow-lg hover:shadow-[#14627a]/20 inline-block">
+                {settings?.ctaButtonText || "Explore Courses"}
               </Link>
             </motion.div>
           </div>
         </section>
       </main>
 
-      <Footer />
+      <Footer settings={settings} />
     </div>
   );
 }

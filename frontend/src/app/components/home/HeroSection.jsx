@@ -2,17 +2,9 @@ import { useState } from "react";
 import { motion } from "motion/react";
 import { useNavigate } from "react-router-dom";
 
-
-const picsum = (seed, w, h) => `https://picsum.photos/seed/${seed}/${w}/${h}`;
-
-const HERO_IMAGES = {
-  hero1: picsum("hero1", 500, 500),
-  hero2: picsum("hero2", 500, 500),
-};
-
-function DecorCircle({ color, size, style }) {
+function DecorCircle({ color, size, style, className = "" }) {
   return (
-    <div className="absolute pointer-events-none" style={style} aria-hidden="true">
+    <div className={`absolute pointer-events-none ${className}`} style={style} aria-hidden="true">
       <svg width={size} height={size} viewBox={`0 0 ${size} ${size}`} fill="none">
         <circle cx={size / 2} cy={size / 2} r={size / 2} fill={color} />
       </svg>
@@ -20,7 +12,7 @@ function DecorCircle({ color, size, style }) {
   );
 }
 
-export default function HeroSection({ images }) {
+export default function HeroSection({ images, stats, subtitle }) {
   const [searchQuery, setSearchQuery] = useState("");
   const navigate = useNavigate();
 
@@ -38,18 +30,21 @@ export default function HeroSection({ images }) {
     }
   };
 
+  const displayCourses = stats?.courses ? `${stats.courses.toLocaleString()}+` : "0";
+  const displayInstructors = stats?.instructors ? stats.instructors.toLocaleString() : "0";
+
   return (
     <section className="bg-[#fffaf5] relative overflow-hidden" aria-label="Hero">
-      <DecorCircle color="#ED4459" size={10} style={{ left: 34, top: 20 }} />
-      <DecorCircle color="#6D39E9" size={12} style={{ left: 753, top: 30 }} />
-      <DecorCircle color="#FFC27A" size={15} style={{ right: 100, top: 40 }} />
+      <DecorCircle color="#ED4459" size={10} style={{ left: 34, top: 20 }} className="hidden sm:block" />
+      <DecorCircle color="#6D39E9" size={12} style={{ left: 753, top: 30 }} className="hidden lg:block" />
+      <DecorCircle color="#FFC27A" size={15} style={{ right: 100, top: 40 }} className="hidden sm:block" />
 
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-16 md:py-24 relative z-10">
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 md:py-16 relative z-10">
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-12 items-center">
 
           {/* Copy */}
           <motion.div
-            className="text-[#06213d] space-y-6"
+            className="text-[#06213d] space-y-6 order-2 lg:order-1"
             initial={{ opacity: 0, x: -50 }}
             animate={{ opacity: 1, x: 0 }}
             transition={{ duration: 0.8 }}
@@ -67,11 +62,11 @@ export default function HeroSection({ images }) {
                 transition={{ duration: 2, repeat: Infinity }}
               >
 
-                5,000+
+                {displayCourses}
 
               </motion.span>{" "}
               Courses
-              <br />from <span className="text-[#14627a]">300</span> Instructors
+              <br />from <span className="text-[#14627a]">{displayInstructors}</span> Instructors
               <br />& Institutions
             </motion.h1>
 
@@ -79,7 +74,7 @@ export default function HeroSection({ images }) {
               className="text-[18px] md:text-[20px] text-[#6d737a]"
               initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.5, delay: 0.2 }}
             >
-              Learn at your own pace with world-class instructors and institutions.
+              {subtitle || "Learn at your own pace with world-class instructors and institutions."}
             </motion.p>
 
             <motion.div
@@ -110,28 +105,37 @@ export default function HeroSection({ images }) {
 
           {/* Images */}
           <motion.div
-            className="hidden lg:block relative h-[400px]"
+            className="relative h-auto lg:h-[400px] mt-8 lg:mt-0 order-1 lg:order-2"
             initial={{ opacity: 0, x: 100 }}
-            animate={{ opacity: 1, x: 0 }}
+            whileInView={{ opacity: 1, x: 0 }}
+            viewport={{ once: true }}
             transition={{ duration: 0.8, delay: 0.2 }}
             aria-hidden="true"
           >
-            <motion.img
-              src={(images && images[0]) ? images[0] : HERO_IMAGES.hero1}
-              alt=""
-              className="absolute rounded-lg shadow-2xl w-[50%] -rotate-5 z-10"
-              style={{ left: "0%", top: "0%" }}
-              whileHover={{ rotate: -2, scale: 1.05 }}
-              transition={{ duration: 0.3 }}
-            />
-            <motion.img
-              src={(images && images[1]) ? images[1] : HERO_IMAGES.hero2}
-              alt=""
-              className="absolute rounded-lg shadow-2xl w-[48%] rotate-4 z-20"
-              style={{ right: "0%", top: "5%" }}
-              whileHover={{ rotate: 6, scale: 1.05 }}
-              transition={{ duration: 0.3 }}
-            />
+            {images?.[0] && (
+              <motion.img
+                src={images[0]}
+                alt=""
+                className="relative lg:absolute rounded-lg shadow-xl w-full lg:w-[50%] max-h-[300px] sm:max-h-[400px] lg:max-h-none object-cover rotate-0 lg:-rotate-5 z-10 lg:left-[5%] lg:top-0 mx-auto lg:mx-0"
+                whileHover={{ zIndex: 50, scale: 1.05, rotate: -2 }}
+                transition={{ duration: 0.3 }}
+                fetchpriority="high"
+                loading="eager"
+              />
+            )}
+
+            {images?.[1] && (
+              <motion.img
+                src={images[1]}
+                alt=""
+                className="absolute rounded-lg shadow-2xl w-[43%] lg:w-[48%] rotate-4 z-20 hidden lg:block"
+                style={{ right: "5%", top: "10%" }}
+                whileHover={{ zIndex: 50, scale: 1.05, rotate: 6 }}
+                transition={{ duration: 0.3 }}
+                fetchpriority="high"
+                loading="eager"
+              />
+            )}
           </motion.div>
         </div>
       </div>

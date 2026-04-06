@@ -41,6 +41,7 @@ userSchema.methods.getPublicProfile = function() {
     email: this.email,
     firstName: this.firstName,
     lastName: this.lastName,
+    phone: this.phone,
     role: this.role
   };
 };

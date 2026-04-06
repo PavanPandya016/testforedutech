@@ -15,13 +15,13 @@ export default function CourseCard({ course, index }) {
   const { id, title, category, price, rating, reviews, image, description } = course;
   return (
     <motion.div
-      className="flex-shrink-0 w-[320px] group"
+      className="flex-shrink-0 w-[280px] sm:w-[320px] group"
       initial={{ opacity: 0, y: 20 }}
       whileInView={{ opacity: 1, y: 0 }}
       viewport={{ once: true }}
       transition={{ duration: 0.5, delay: index * 0.1 }}
     >
-      <Link to={`/apply`} className="block h-full" aria-label={`Apply for ${title}`}>
+      <Link to={`/apply?course=${encodeURIComponent(title)}`} className="block h-full" aria-label={`Apply for ${title}`}>
         <motion.article
           className="bg-white rounded-2xl overflow-hidden h-full shadow-[0_4px_20px_rgba(0,0,0,0.05)] border border-gray-100"
           whileHover={{ y: -10, boxShadow: "0 20px 40px rgba(20,98,122,0.12)" }}

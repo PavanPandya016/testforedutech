@@ -56,7 +56,7 @@ function CourseCard({ course }) {
             </p>
           </div>
           <Link
-            to="/apply"
+            to={`/apply?course=${encodeURIComponent(course.title)}`}
             className="bg-[#06213d] text-white px-6 py-3 rounded-xl font-bold text-xs hover:bg-[#14627a] transform active:scale-95 transition-all shadow-md"
           >
             Enroll Now
@@ -117,7 +117,7 @@ function FiltersSidebar({
     <>
       <motion.button
         onClick={() => setIsOpen(true)}
-        className="lg:hidden fixed bottom-8 right-6 z-50 bg-[#14627a] text-white w-14 h-14 rounded-2xl shadow-[0_20px_40px_rgba(20,98,122,0.3)] flex items-center justify-center border border-white/20 backdrop-blur-sm"
+        className="lg:hidden fixed bottom-8 left-6 z-50 bg-[#14627a] text-white w-14 h-14 rounded-2xl shadow-[0_20px_40px_rgba(20,98,122,0.3)] flex items-center justify-center border border-white/20 backdrop-blur-sm"
         whileTap={{ scale: 0.9 }}
         initial={{ opacity: 0, scale: 0.5 }}
         animate={{ opacity: 1, scale: 1 }}

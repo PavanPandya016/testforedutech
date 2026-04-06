@@ -1,5 +1,9 @@
 const asyncHandler = require('../middleware/asyncHandler');
-const { User, Course, Event, BlogPost, EventRegistration, Category, Tag, Instructor } = require('../models');
+const { 
+  User, Course, Event, BlogPost, EventRegistration, 
+  Category, Tag, Instructor, CourseApplication, ActivityLog 
+} = require('../models');
+const { logActivity } = require('../utils/logger');
 
 // @desc    Get dashboard stats
 // @route   GET /api/admin/stats
@@ -9,6 +13,8 @@ exports.getStats = asyncHandler(async (req, res) => {
   const courseCount = await Course.countDocuments();
   const eventCount = await Event.countDocuments();
   const blogCount = await BlogPost.countDocuments();
+  const applicationCount = await CourseApplication.countDocuments();
+  const categoryCount = await Category.countDocuments();
 
   // Get some recent activity (e.g., last 5 users)
   const recentUsers = await User.find().sort({ createdAt: -1 }).limit(5).select('firstName lastName email role createdAt');
@@ -20,10 +26,74 @@ exports.getStats = asyncHandler(async (req, res) => {
       courses: courseCount,
       events: eventCount,
       blogs: blogCount,
-      instructors: await Instructor.countDocuments()
+      instructors: await Instructor.countDocuments(),
+      applications: applicationCount,
+      categories: categoryCount
     },
-    recentUsers
+    recentUsers,
+    recentActivity: await ActivityLog.find()
+      .populate('user', 'firstName lastName email role')
+      .sort({ timestamp: -1 })
+      .limit(10)
   });
+});
+
+// @desc    Get public stats (counts only)
+// @route   GET /api/admin/public-stats
+// @access  Public
+exports.getPublicStats = asyncHandler(async (req, res) => {
+  const userCount = await User.countDocuments();
+  const courseCount = await Course.countDocuments();
+  const instructorCount = await Instructor.countDocuments();
+  const eventCount = await Event.countDocuments();
+  const blogCount = await BlogPost.countDocuments();
+
+  res.json({
+    success: true,
+    stats: {
+      users: userCount,
+      courses: courseCount,
+      instructors: instructorCount,
+      events: eventCount,
+      blogs: blogCount
+    }
+  });
+});
+
+// ... (keep previous methods like getUsers, updateUser, etc.)
+
+// @desc    Get all course applications
+// @route   GET /api/admin/applications
+// @access  Private/Admin
+exports.getApplications = asyncHandler(async (req, res) => {
+  const applications = await CourseApplication.find()
+    .populate('user', 'firstName lastName email phoneNumber')
+    .sort({ createdAt: -1 });
+
+  res.json({
+    success: true,
+    count: applications.length,
+    data: applications
+  });
+});
+
+// @desc    Update application status
+// @route   PUT /api/admin/applications/:id
+// @access  Private/Admin
+exports.updateApplicationStatus = asyncHandler(async (req, res) => {
+  const { status } = req.body;
+  
+  const application = await CourseApplication.findByIdAndUpdate(
+    req.params.id, 
+    { status }, 
+    { new: true, runValidators: true }
+  );
+
+  if (!application) {
+    return res.status(404).json({ success: false, error: 'Application not found' });
+  }
+
+  res.json({ success: true, data: application });
 });
 
 // @desc    Get all users
@@ -52,6 +122,10 @@ exports.updateUser = asyncHandler(async (req, res) => {
 // @access  Private/Admin
 exports.createUser = asyncHandler(async (req, res) => {
   const user = await User.create(req.body);
+  
+  // Log the activity
+  await logActivity(req.user.id, 'user_joined', `Created user account: ${user.firstName} ${user.lastName} (Role: ${user.role})`);
+
   res.status(201).json({ success: true, user });
 });
 
@@ -202,6 +276,16 @@ exports.createEntity = asyncHandler(async (req, res) => {
   }
 
   const item = await model.create(req.body);
+
+  // Log the activity
+  let actionType = '';
+  if (type === 'courses') actionType = 'course_added';
+  else if (type === 'events') actionType = 'event_added';
+  else if (type === 'blogs') actionType = 'blog_added';
+
+  if (actionType) {
+    await logActivity(req.user.id, actionType, `Created new ${type.slice(0, -1)}: ${item.title || item.name}`);
+  }
 
   res.status(201).json({ success: true, data: item });
 });

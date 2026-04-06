@@ -139,7 +139,9 @@ function CategorySection() {
 // ─────────────────────────────────────────────
 // Footer
 // ─────────────────────────────────────────────
-export default function Footer() {
+export default function Footer({ settings }) {
+  const currentYear = new Date().getFullYear();
+
   return (
     <div className="bg-white relative shrink-0 w-full py-12 px-4 sm:px-8 md:px-16 lg:px-32">
       <div className="max-w-7xl mx-auto">
@@ -158,31 +160,40 @@ export default function Footer() {
               <p className="leading-[32px]">Contact Us</p>
             </div>
             <div className="space-y-2">
-              <a href="tel:+919723241413" className="flex items-center gap-2 text-sm md:text-base text-[#6d737a] hover:text-[#14627a] transition">
-                <i className="bi bi-telephone text-lg"></i>
-                <span>+91 9723241413</span>
-              </a>
+              {settings?.phone && (
+                <a href={`tel:${settings.phone}`} className="flex items-center gap-2 text-sm md:text-base text-[#6d737a] hover:text-[#14627a] transition">
+                  <i className="bi bi-telephone text-lg"></i>
+                  <span>{settings.phone}</span>
+                </a>
+              )}
 
-              <a
-                href="https://www.google.com/maps/place/iHub+Gujarat/data=!4m2!3m1!1s0x0:0x8f192b2f852e333c?sa=X&ved=1t:2428&ictx=111"
-                target="_blank"
-                rel="noreferrer"
-                className="font-['Public_Sans',sans-serif] text-[#6d737a] text-sm md:text-base leading-[24px] flex items-start gap-2 hover:text-[#14627a] transition"
-              >
-                <i className="bi bi-house text-[#14627a] text-lg mt-[2px]"></i>
-                <span>IHub Gujarat, Navrangpura, 380015 Ahmedabad, Gujarat</span>
-              </a>
+              {settings?.address && (
+                <a
+                  href={`https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(settings.address)}`}
+                  target="_blank"
+                  rel="noreferrer"
+                  className="font-['Public_Sans',sans-serif] text-[#6d737a] text-sm md:text-base leading-[24px] flex items-start gap-2 hover:text-[#14627a] transition"
+                >
+                  <i className="bi bi-house text-[#14627a] text-lg mt-[2px]"></i>
+                  <span>{settings.address}</span>
+                </a>
+              )}
 
-              <a href="mailto:Info@tejeelinnovations.com" className="flex items-center gap-2 text-sm md:text-base text-[#363a3d] hover:text-[#14627a] transition">
-                <i className="bi bi-envelope-at text-[#14627a] text-lg"></i>
-                <span>Info@tejeelinnovations.com</span>
-              </a>
+              {settings?.email && (
+                <a href={`mailto:${settings.email}`} className="flex items-center gap-2 text-sm md:text-base text-[#363a3d] hover:text-[#14627a] transition">
+                  <i className="bi bi-envelope-at text-[#14627a] text-lg"></i>
+                  <span>{settings.email}</span>
+                </a>
+              )}
             </div>
             <div className="flex gap-4 mt-4">
               <SocialMediaCard><SocialMediaLogo /></SocialMediaCard>
               <SocialMediaCard><SocialMediaLogo1 /></SocialMediaCard>
               <SocialMediaCard><SocialMediaLogo2 /></SocialMediaCard>
             </div>
+            <p className="text-[#6d737a] text-xs pt-4">
+              © {currentYear} eduTech. All rights reserved.
+            </p>
           </div>
 
           {/* Explore Section */}

@@ -2,9 +2,9 @@ import { motion } from "motion/react";
 
 const picsum = (seed, w, h) => `https://picsum.photos/seed/${seed}/${w}/${h}`;
 
-function DecorCircle({ color, size, style }) {
+function DecorCircle({ color, size, style, className = "" }) {
   return (
-    <div className="absolute pointer-events-none" style={style} aria-hidden="true">
+    <div className={`absolute pointer-events-none ${className}`} style={style} aria-hidden="true">
       <svg width={size} height={size} viewBox={`0 0 ${size} ${size}`} fill="none">
         <circle cx={size / 2} cy={size / 2} r={size / 2} fill={color} />
       </svg>
@@ -27,14 +27,16 @@ function SpinningStarDecor({ className = "" }) {
   );
 }
 
-export default function CtaSection({ image }) {
-  const ctaImage = image || picsum("cta", 500, 500);
+export default function CtaSection({ image, title, subtitle, buttonText, buttonLink }) {
+  const ctaImage = image;
 
   return (
-    <section className="relative py-24 px-4 sm:px-6 lg:px-8 bg-[rgba(235,243,255,0.7)] overflow-hidden" aria-labelledby="cta-heading">
-      <DecorCircle color="#14627A" size={20} style={{ left: "10%", top: "50%" }} />
-      <DecorCircle color="#F9475D" size={18} style={{ left: "25%", top: "10%" }} />
-      <DecorCircle color="#6D39E9" size={48} style={{ right: "15%", bottom: "20%" }} />
+    <section className="relative py-16 md:py-24 px-4 sm:px-6 lg:px-8 bg-[rgba(235,243,255,0.7)] overflow-hidden" aria-labelledby="cta-heading">
+      <div className="hidden sm:block">
+        <DecorCircle color="#14627A" size={20} style={{ left: "10%", top: "50%" }} />
+        <DecorCircle color="#F9475D" size={18} style={{ left: "25%", top: "10%" }} />
+      </div>
+      <DecorCircle color="#6D39E9" size={48} style={{ right: "15%", bottom: "10%" }} className="hidden sm:block lg:bottom-[20%]" />
 
       <div className="max-w-7xl mx-auto">
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-12 items-center">
@@ -47,9 +49,11 @@ export default function CtaSection({ image }) {
             viewport={{ once: true }}
             transition={{ duration: 0.8 }}
           >
-            <div className="border-2 border-[#0f4a63] rounded-[70px] p-8 overflow-hidden">
-              <img src={ctaImage} alt="Student learning online" className="rounded-[70px] w-full h-full object-cover" />
-            </div>
+            {ctaImage && (
+              <div className="border-2 border-[#0f4a63] rounded-[40px] md:rounded-[70px] p-4 md:p-8 overflow-hidden">
+                <img src={ctaImage} alt="Promotion" className="rounded-[30px] md:rounded-[70px] w-full h-full object-cover" />
+              </div>
+            )}
             <SpinningStarDecor className="-right-8 top-1/2 -translate-y-1/2" />
           </motion.div>
 
@@ -62,18 +66,18 @@ export default function CtaSection({ image }) {
             transition={{ duration: 0.8 }}
           >
             <h2 className="text-[32px] md:text-[40px] font-semibold text-[#06213d] leading-tight">
-              Upgrade Your Skills with <span className="text-[#14627a]">Expert-Led Learning</span>
+              {title || "Upgrade Your Skills with Expert-Led Learning"}
             </h2>
             <p className="text-[20px] md:text-[24px] text-[#06213d]">
-              Join thousands of learners and start building real-world skills today.
+              {subtitle || "Join thousands of learners and start building real-world skills today."}
             </p>
             <motion.a
-              href="/signup"
+              href={buttonLink || "/signup"}
               className="inline-block bg-[#14627a] text-white px-8 py-4 rounded-lg text-[16px] font-medium"
               whileHover={{ scale: 1.05, boxShadow: "0 10px 30px rgba(20,98,122,0.3)" }}
               whileTap={{ scale: 0.95 }}
             >
-              Sign up for Free
+              {buttonText || "Sign up for Free"}
             </motion.a>
           </motion.div>
         </div>

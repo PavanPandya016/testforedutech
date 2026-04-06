@@ -5,7 +5,7 @@ import {
   Settings, LogOut, Search, Plus, MoreVertical,
   CheckCircle, XCircle, Clock, Trash2, Edit, ExternalLink,
   BarChart3, TrendingUp, UserPlus, AlertCircle, Star, Save, Image as ImageIcon,
-  Tag, UserCog
+  Tag, UserCog, Activity
 } from 'lucide-react';
 import { useNavigate, Link } from 'react-router-dom';
 import Header from '../components/ui/Header';
@@ -41,9 +41,11 @@ const StatCard = ({ title, value, icon: Icon, trend, color }) => (
 
 export default function AdminDashboard() {
   const [activeTab, setActiveTab] = useState('overview');
-  const [stats, setStats] = useState({ users: 0, courses: 0, events: 0, blogs: 0, instructors: 0 });
+  const [stats, setStats] = useState({ users: 0, courses: 0, events: 0, blogs: 0, instructors: 0, applications: 0, categories: 0 });
   const [users, setUsers] = useState([]);
   const [entities, setEntities] = useState([]);
+  const [applications, setApplications] = useState([]);
+  const [recentActivity, setRecentActivity] = useState([]);
   const [siteSettings, setSiteSettings] = useState({ heroImages: [], featuredCourseIds: [] });
   const [isLoading, setIsLoading] = useState(true);
   const [searchTerm, setSearchTerm] = useState('');
@@ -68,8 +70,24 @@ export default function AdminDashboard() {
     password: '',
     isActive: true
   });
+  
+  const [isAddingCategory, setIsAddingCategory] = useState(false);
+  const [editingCategory, setEditingCategory] = useState(null);
+  const [categoryFormData, setCategoryFormData] = useState({ name: '' });
+  
+  const [isSidebarOpen, setIsSidebarOpen] = useState(false);
 
   const navigate = useNavigate();
+
+  const formatTimeAgo = (date) => {
+    const seconds = Math.floor((new Date() - new Date(date)) / 1000);
+    if (seconds < 60) return `${seconds}s ago`;
+    const minutes = Math.floor(seconds / 60);
+    if (minutes < 60) return `${minutes}m ago`;
+    const hours = Math.floor(minutes / 60);
+    if (hours < 24) return `${hours}h ago`;
+    return new Date(date).toLocaleDateString();
+  };
 
   useEffect(() => {
     const user = authService.getCurrentUser();
@@ -86,6 +104,7 @@ export default function AdminDashboard() {
     try {
       const statsData = await adminService.getStats();
       setStats(statsData.stats);
+      setRecentActivity(statsData.recentActivity || []);
       if (activeTab === 'overview') {
         // Stats are already fetched
       } else if (activeTab === 'users') {
@@ -94,6 +113,9 @@ export default function AdminDashboard() {
       } else if (activeTab === 'settings') {
         const settingsData = await adminService.getSiteSettings();
         setSiteSettings(settingsData || { heroImages: [], featuredCourseIds: [] });
+      } else if (activeTab === 'applications') {
+        const appsData = await adminService.getApplications();
+        setApplications(appsData);
       } else {
         const url = `/admin/entities/list/${activeTab}`;
         // window.alert(`Fetching URL: http://localhost:5000/api${url}`); // Uncomment if needed, but console.log is safer
@@ -111,6 +133,7 @@ export default function AdminDashboard() {
 
   useEffect(() => {
     fetchInitialData();
+    setIsSidebarOpen(false); // Close sidebar when switching tabs
   }, [activeTab]);
 
   const handleRoleUpdate = async (userId, newRole) => {
@@ -287,10 +310,10 @@ export default function AdminDashboard() {
       setEditingInstructor(item);
       setNewInstructor({ name: item.name, studyArea: item.studyArea, img: item.img });
     } else if (type === 'categories') {
-      const newName = prompt('Enter new category name:', item.name);
-      if (newName && newName !== item.name) {
-        handleUpdateCategory(id, newName);
-      }
+      window.scrollTo({ top: 0, behavior: 'smooth' });
+      setIsAddingCategory(true);
+      setEditingCategory(item);
+      setCategoryFormData({ name: item.name });
     } else if (type === 'users') {
       handleOpenUserModal(item);
     } else {
@@ -325,20 +348,33 @@ export default function AdminDashboard() {
     }
   };
 
-  const handleCreateCategory = async (name) => {
+  const handleCreateCategory = async () => {
     try {
+      const { name } = categoryFormData;
+      if (!name.trim()) return alert('Category name is required');
+      
       await adminService.createEntity('categories', { name });
       fetchInitialData();
+      setIsAddingCategory(false);
+      setEditingCategory(null);
+      setCategoryFormData({ name: '' });
     } catch (error) {
       console.error('Failed to create category:', error);
       alert('Failed to create category: ' + (error.response?.data?.error || error.response?.data?.message || error.message));
     }
   };
 
-  const handleUpdateCategory = async (id, name) => {
+  const handleUpdateCategory = async () => {
     try {
+      const { name } = categoryFormData;
+      if (!name.trim()) return alert('Category name is required');
+      const id = editingCategory._id || editingCategory.id;
+
       await adminService.updateEntity('categories', id, { name });
       fetchInitialData();
+      setIsAddingCategory(false);
+      setEditingCategory(null);
+      setCategoryFormData({ name: '' });
     } catch (error) {
       console.error('Failed to update category:', error);
       alert('Failed to update category: ' + (error.response?.data?.error || error.response?.data?.message || error.message));
@@ -360,14 +396,120 @@ export default function AdminDashboard() {
     }
   };
 
-  const filteredData = (activeTab === 'users' ? users : entities).filter(item => {
-    const searchStr = (item.firstName || item.title || item.name || '').toLowerCase();
+  const handleUpdateApplicationStatus = async (id, status) => {
+    try {
+      await adminService.updateApplicationStatus(id, status);
+      setApplications(applications.map(app => app._id === id ? { ...app, status } : app));
+    } catch (error) {
+      console.error('Failed to update application status:', error);
+      alert('Failed to update status');
+    }
+  };
+
+  const filteredData = (activeTab === 'users' ? users : activeTab === 'applications' ? applications : entities).filter(item => {
+    const searchStr = (item.firstName || item.title || item.name || item.fullName || item.courseTitle || '').toLowerCase();
     return searchStr.includes(searchTerm.toLowerCase());
   });
 
   return (
     <div className="min-h-screen bg-[#f8fafc] flex flex-col font-outfit">
       <Header />
+
+      {/* Mobile Sidebar Overlay */}
+      <AnimatePresence>
+        {isSidebarOpen && (
+          <>
+            <motion.div
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              exit={{ opacity: 0 }}
+              onClick={() => setIsSidebarOpen(false)}
+              className="lg:hidden fixed inset-0 z-[120] bg-black/40 backdrop-blur-sm"
+            />
+            <motion.div
+              initial={{ x: '-100%' }}
+              animate={{ x: 0 }}
+              exit={{ x: '-100%' }}
+              transition={{ type: 'spring', damping: 25, stiffness: 200 }}
+              className="lg:hidden fixed inset-y-0 left-0 w-72 z-[130] bg-white shadow-2xl flex flex-col p-6 gap-6 overflow-y-auto"
+            >
+              <div className="flex items-center justify-between mb-4">
+                <h2 className="text-xs font-bold text-gray-400 font-mono uppercase tracking-widest">Admin Control</h2>
+                <button onClick={() => setIsSidebarOpen(false)} className="p-2 hover:bg-gray-100 rounded-lg">
+                  <XCircle className="w-6 h-6 text-gray-400" />
+                </button>
+              </div>
+
+              <nav className="flex flex-col gap-2">
+                <SidebarItem
+                  icon={LayoutDashboard}
+                  label="Overview"
+                  active={activeTab === 'overview'}
+                  onClick={() => { setActiveTab('overview'); setIsSidebarOpen(false); }}
+                />
+                <SidebarItem
+                  icon={Users}
+                  label="Users"
+                  active={activeTab === 'users'}
+                  onClick={() => { setActiveTab('users'); setIsSidebarOpen(false); }}
+                />
+                <SidebarItem
+                  icon={BookOpen}
+                  label="Courses"
+                  active={activeTab === 'courses'}
+                  onClick={() => { setActiveTab('courses'); setIsSidebarOpen(false); }}
+                />
+                <SidebarItem
+                  icon={Calendar}
+                  label="Events"
+                  active={activeTab === 'events'}
+                  onClick={() => { setActiveTab('events'); setIsSidebarOpen(false); }}
+                />
+                <SidebarItem
+                  icon={FileText}
+                  label="Blogs"
+                  active={activeTab === 'blogs'}
+                  onClick={() => { setActiveTab('blogs'); setIsSidebarOpen(false); }}
+                />
+                <SidebarItem
+                  icon={Tag}
+                  label="Categories"
+                  active={activeTab === 'categories'}
+                  onClick={() => { setActiveTab('categories'); setIsSidebarOpen(false); }}
+                />
+                <SidebarItem
+                  icon={UserCog}
+                  label="Instructors"
+                  active={activeTab === 'instructors'}
+                  onClick={() => { setActiveTab('instructors'); setIsSidebarOpen(false); }}
+                />
+                <SidebarItem
+                  icon={TrendingUp}
+                  label="Applications"
+                  active={activeTab === 'applications'}
+                  onClick={() => { setActiveTab('applications'); setIsSidebarOpen(false); }}
+                />
+              </nav>
+
+              <div className="mt-auto pt-6 border-t border-gray-100">
+                <SidebarItem
+                  icon={Settings}
+                  label="Settings"
+                  active={activeTab === 'settings'}
+                  onClick={() => { setActiveTab('settings'); setIsSidebarOpen(false); }}
+                />
+                <button
+                  onClick={() => authService.logout().then(() => navigate('/login'))}
+                  className="w-full flex items-center gap-3 px-4 py-3 rounded-lg text-red-600 hover:bg-red-50 transition-all mt-2 font-bold"
+                >
+                  <LogOut className="w-5 h-5" />
+                  <span className="font-medium">Logout Panel</span>
+                </button>
+              </div>
+            </motion.div>
+          </>
+        )}
+      </AnimatePresence>
 
       <div className="flex-1 flex overflow-hidden">
         {/* Sidebar */}
@@ -419,6 +561,12 @@ export default function AdminDashboard() {
               active={activeTab === 'instructors'}
               onClick={() => setActiveTab('instructors')}
             />
+            <SidebarItem
+              icon={TrendingUp}
+              label="Applications"
+              active={activeTab === 'applications'}
+              onClick={() => setActiveTab('applications')}
+            />
           </nav>
 
           <div className="mt-auto pt-6 border-t border-gray-100">
@@ -439,13 +587,21 @@ export default function AdminDashboard() {
         </aside>
 
         {/* Main Content */}
-        <main className="flex-1 overflow-y-auto p-4 sm:p-8 lg:p-10">
+        <main className="flex-1 overflow-y-auto p-4 sm:p-6 lg:p-10">
           <div className="max-w-6xl mx-auto">
             {/* Header Area */}
             <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-8">
-              <div>
-                <h1 className="text-3xl font-extrabold text-gray-900 capitalize">{activeTab} Management</h1>
-                <p className="text-gray-500 mt-1">Manage and monitor platform activity efficiently.</p>
+              <div className="flex items-center gap-4">
+                <button 
+                  onClick={() => setIsSidebarOpen(true)}
+                  className="lg:hidden p-2 bg-white border border-gray-200 rounded-lg text-gray-600 hover:bg-gray-50 transition-all shadow-sm"
+                >
+                  <MoreVertical className="w-5 h-5 rotate-90" />
+                </button>
+                <div>
+                  <h1 className="text-2xl sm:text-3xl font-extrabold text-gray-900 capitalize">{activeTab} Management</h1>
+                  <p className="text-gray-500 text-sm mt-1 sm:block hidden">Manage and monitor platform activity efficiently.</p>
+                </div>
               </div>
 
               {activeTab !== 'overview' && (
@@ -466,8 +622,9 @@ export default function AdminDashboard() {
                       else if (activeTab === 'blogs') navigate('/blog/editor');
                       else if (activeTab === 'courses') navigate('/admin/courses/new');
                       else if (activeTab === 'categories') {
-                        const name = prompt('Enter new category name:');
-                        if (name) handleCreateCategory(name);
+                        setIsAddingCategory(!isAddingCategory);
+                        setEditingCategory(null);
+                        setCategoryFormData({ name: '' });
                       }
                       else if (activeTab === 'instructors') {
                         setIsAddingInstructor(!isAddingInstructor);
@@ -578,6 +735,53 @@ export default function AdminDashboard() {
                           className="px-6 py-2 bg-[#14627a] text-white rounded-lg font-bold hover:bg-[#0f4a5b] transition-all"
                         >
                           {editingInstructor ? 'Update' : 'Save'} Instructor
+                        </button>
+                      </div>
+                    </motion.div>
+                  )}
+
+                  {activeTab === 'categories' && isAddingCategory && (
+                    <motion.div
+                      initial={{ opacity: 0, height: 0 }}
+                      animate={{ opacity: 1, height: 'auto' }}
+                      exit={{ opacity: 0, height: 0 }}
+                      className="mb-8 bg-white p-6 rounded-2xl border border-[#14627a]/20 shadow-sm"
+                    >
+                      <div className="flex items-center gap-4 mb-4">
+                        <div className="p-2 bg-[#14627a]/10 rounded-lg text-[#14627a]">
+                          <Tag className="w-5 h-5" />
+                        </div>
+                        <h4 className="font-bold text-gray-900">{editingCategory ? 'Edit' : 'Add New'} Category</h4>
+                      </div>
+                      <div className="max-w-md">
+                        <label className="block text-sm font-medium text-gray-700 mb-1">Category Name</label>
+                        <input
+                          type="text"
+                          placeholder="e.g. Data Science"
+                          value={categoryFormData.name}
+                          onChange={(e) => setCategoryFormData({ ...categoryFormData, name: e.target.value })}
+                          className="w-full px-4 py-2 border border-gray-200 rounded-lg text-sm focus:ring-2 focus:ring-[#14627a]/20 outline-none"
+                          onKeyDown={(e) => {
+                            if (e.key === 'Enter') editingCategory ? handleUpdateCategory() : handleCreateCategory();
+                          }}
+                        />
+                      </div>
+                      <div className="flex justify-start gap-3 mt-6">
+                        <button
+                          onClick={() => {
+                            setIsAddingCategory(false);
+                            setEditingCategory(null);
+                            setCategoryFormData({ name: '' });
+                          }}
+                          className="px-4 py-2 text-gray-500 hover:text-gray-700 font-medium transition-colors"
+                        >
+                          Cancel
+                        </button>
+                        <button
+                          onClick={() => editingCategory ? handleUpdateCategory() : handleCreateCategory()}
+                          className="px-6 py-2 bg-[#14627a] text-white rounded-lg font-bold hover:bg-[#0f4a5b] transition-all"
+                        >
+                          {editingCategory ? 'Update' : 'Save'} Category
                         </button>
                       </div>
                     </motion.div>
@@ -715,6 +919,79 @@ export default function AdminDashboard() {
                         </button>
                       </div>
                     </div>
+                  ) : activeTab === 'applications' ? (
+                    <div className="bg-white rounded-2xl border border-gray-100 shadow-sm overflow-hidden">
+                      <div className="overflow-x-auto">
+                        <table className="w-full text-left border-collapse">
+                          <thead>
+                            <tr className="bg-gray-50 border-b border-gray-100 uppercase tracking-wider text-[10px] sm:text-xs font-bold text-gray-500">
+                              <th className="px-4 sm:px-6 py-4">Applicant</th>
+                              <th className="px-4 sm:px-6 py-4">Course</th>
+                              <th className="px-4 sm:px-6 py-4 hidden md:table-cell">Contact</th>
+                              <th className="px-4 sm:px-6 py-4 hidden lg:table-cell">Education</th>
+                              <th className="px-4 sm:px-6 py-4">Status</th>
+                              <th className="px-4 sm:px-6 py-4 text-right">Date</th>
+                            </tr>
+                          </thead>
+                          <tbody className="divide-y divide-gray-50">
+                            {filteredData.map((app) => (
+                              <tr key={app._id} className="hover:bg-[#f8fafc]/50 transition-colors text-sm">
+                                <td className="px-4 sm:px-6 py-4">
+                                  <div className="flex items-center gap-3">
+                                    <div className="w-9 h-9 rounded-full bg-[#14627a]/10 flex items-center justify-center text-[#14627a] font-bold text-xs">
+                                      {app.fullName.charAt(0)}
+                                    </div>
+                                    <div>
+                                      <p className="font-bold text-gray-900">{app.fullName}</p>
+                                      <p className="text-[10px] text-gray-500 md:hidden">{app.email}</p>
+                                    </div>
+                                  </div>
+                                </td>
+                                <td className="px-4 sm:px-6 py-4">
+                                  <span className="font-medium text-gray-700">{app.courseTitle}</span>
+                                </td>
+                                <td className="px-4 sm:px-6 py-4 hidden md:table-cell">
+                                  <div className="flex flex-col">
+                                    <span className="text-gray-900">{app.email}</span>
+                                    <span className="text-xs text-gray-500">{app.phoneNumber}</span>
+                                  </div>
+                                </td>
+                                <td className="px-4 sm:px-6 py-4 hidden lg:table-cell">
+                                  <span className="text-gray-600">{app.educationLevel}</span>
+                                </td>
+                                <td className="px-4 sm:px-6 py-4">
+                                  <select
+                                    value={app.status}
+                                    onChange={(e) => handleUpdateApplicationStatus(app._id, e.target.value)}
+                                    className={`text-[10px] sm:text-xs font-bold px-2 py-1 rounded-lg border outline-none cursor-pointer transition-colors ${
+                                      app.status === 'pending' ? 'bg-orange-50 text-orange-600 border-orange-100' :
+                                      app.status === 'accepted' ? 'bg-green-50 text-green-600 border-green-100' :
+                                      app.status === 'rejected' ? 'bg-red-50 text-red-600 border-red-100' :
+                                      'bg-blue-50 text-blue-600 border-blue-100'
+                                    }`}
+                                  >
+                                    <option value="pending">Pending</option>
+                                    <option value="reviewed">Reviewed</option>
+                                    <option value="contacted">Contacted</option>
+                                    <option value="accepted">Accepted</option>
+                                    <option value="rejected">Rejected</option>
+                                  </select>
+                                </td>
+                                <td className="px-4 sm:px-6 py-4 text-right text-xs text-gray-500">
+                                  {new Date(app.createdAt).toLocaleDateString()}
+                                </td>
+                              </tr>
+                            ))}
+                          </tbody>
+                        </table>
+                      </div>
+                      {filteredData.length === 0 && (
+                        <div className="py-20 flex flex-col items-center justify-center text-gray-500">
+                          <Clock className="w-12 h-12 text-gray-200 mb-4" />
+                          <p className="font-medium">No applications found.</p>
+                        </div>
+                      )}
+                    </div>
                   ) : activeTab === 'overview' ? (
                     <div className="space-y-8">
                       {/* Stats Grid */}
@@ -754,6 +1031,87 @@ export default function AdminDashboard() {
                           trend={0}
                           color="bg-red-50 text-red-600"
                         />
+                        <StatCard
+                          title="Applications"
+                          value={stats.applications || 0}
+                          icon={TrendingUp}
+                          trend={0}
+                          color="bg-yellow-50 text-yellow-600"
+                        />
+                        <StatCard
+                          title="Categories"
+                          value={stats.categories || 0}
+                          icon={Tag}
+                          trend={0}
+                          color="bg-cyan-50 text-cyan-600"
+                        />
+                      </div>
+                      
+                      {/* Platform Activity Timeline */}
+                      <div className="bg-white rounded-3xl border border-gray-100 p-8 shadow-sm">
+                        <div className="flex items-center justify-between mb-8">
+                           <div className="flex items-center gap-3">
+                              <div className="p-2 bg-[#14627a]/10 rounded-xl text-[#14627a]">
+                                <Clock className="w-5 h-5" />
+                              </div>
+                              <div>
+                                <h3 className="text-xl font-bold text-gray-900">Platform Activity Timeline</h3>
+                                <p className="text-gray-500 text-sm">Real-time updates of platform events</p>
+                              </div>
+                           </div>
+                           <div className="flex items-center gap-2 px-3 py-1 bg-green-50 rounded-full">
+                              <div className="w-2 h-2 bg-green-500 rounded-full animate-pulse" />
+                              <span className="text-[10px] items-center font-bold text-green-600 uppercase tracking-wider">Live Tracking</span>
+                           </div>
+                        </div>
+
+                        <div className="space-y-6">
+                          {recentActivity.length === 0 ? (
+                            <div className="py-12 flex flex-col items-center justify-center text-gray-400">
+                              <Activity className="w-12 h-12 mb-3 opacity-20" />
+                              <p className="text-sm">No recent activity detected.</p>
+                            </div>
+                          ) : (
+                             recentActivity.map((log, idx) => (
+                               <div key={log._id || idx} className="flex gap-4 group">
+                                 <div className="flex flex-col items-center">
+                                   <div className={`w-10 h-10 rounded-xl flex items-center justify-center shrink-0 shadow-sm transition-transform group-hover:scale-110 ${
+                                     log.action === 'user_joined' ? 'bg-blue-50 text-blue-600' :
+                                     log.action === 'course_added' || log.action === 'course_enrolled' ? 'bg-purple-50 text-purple-600' :
+                                     log.action === 'event_added' || log.action === 'event_registered' ? 'bg-orange-50 text-orange-600' :
+                                     log.action === 'blog_added' ? 'bg-green-50 text-green-600' :
+                                     'bg-yellow-50 text-yellow-600'
+                                   }`}>
+                                     {log.action === 'user_joined' && <Users className="w-5 h-5" />}
+                                     {(log.action === 'course_added' || log.action === 'course_enrolled') && <BookOpen className="w-5 h-5" />}
+                                     {(log.action === 'event_added' || log.action === 'event_registered') && <Calendar className="w-5 h-5" />}
+                                     {log.action === 'blog_added' && <FileText className="w-5 h-5" />}
+                                     {log.action === 'application_submitted' && <TrendingUp className="w-5 h-5" />}
+                                   </div>
+                                   {idx < recentActivity.length - 1 && (
+                                     <div className="w-0.5 h-full bg-gray-50 my-1" />
+                                   )}
+                                 </div>
+                                 <div className="flex-1 pb-6">
+                                   <div className="flex items-center justify-between gap-4">
+                                     <p className="text-sm font-bold text-gray-900 leading-tight">
+                                       {log.details}
+                                     </p>
+                                     <span className="text-[10px] font-bold text-gray-400 uppercase whitespace-nowrap bg-gray-50 px-2 py-1 rounded-md">
+                                       {formatTimeAgo(log.timestamp)}
+                                     </span>
+                                   </div>
+                                   <p className="text-xs text-gray-500 mt-1 flex items-center gap-1.5 font-medium">
+                                     <span className="w-1.5 h-1.5 rounded-full bg-gray-300" />
+                                     {log.user ? `${log.user.firstName} ${log.user.lastName}` : 'System Action'}
+                                     <span className="text-gray-300 mx-1">|</span>
+                                     <span className="capitalize">{log.action.replace(/_/g, ' ')}</span>
+                                   </p>
+                                 </div>
+                               </div>
+                             ))
+                          )}
+                        </div>
                       </div>
 
                       {/* Middle Section */}
@@ -765,23 +1123,23 @@ export default function AdminDashboard() {
                       <div className="overflow-x-auto">
                         <table className="w-full text-left border-collapse">
                           <thead>
-                            <tr className="bg-gray-50 border-b border-gray-100">
-                              <th className="px-6 py-4 text-xs font-bold text-gray-500 uppercase tracking-wider">
+                            <tr className="bg-gray-50 border-b border-gray-100 uppercase tracking-wider text-[10px] sm:text-xs font-bold text-gray-500">
+                              <th className="px-4 sm:px-6 py-4">
                                 {activeTab === 'users' ? 'User' : activeTab === 'instructors' ? 'Instructor' : 'Title'}
                               </th>
-                              <th className="px-6 py-4 text-xs font-bold text-gray-500 uppercase tracking-wider">
+                              <th className="px-6 py-4 hidden md:table-cell">
                                 {activeTab === 'users' ? 'Role' : activeTab === 'instructors' ? 'Study Area' : 'Category / Author'}
                               </th>
-                              <th className="px-6 py-4 text-xs font-bold text-gray-500 uppercase tracking-wider">Status</th>
-                              {activeTab === 'events' && <th className="px-6 py-4 text-xs font-bold text-gray-500 uppercase tracking-wider">Location</th>}
-                              {activeTab === 'courses' && <th className="px-6 py-4 text-xs font-bold text-gray-500 uppercase tracking-wider">Featured</th>}
-                              <th className="px-6 py-4 text-xs font-bold text-gray-500 uppercase tracking-wider text-right">Actions</th>
+                              <th className="px-4 sm:px-6 py-4">Status</th>
+                              {activeTab === 'events' && <th className="px-6 py-4 hidden lg:table-cell">Location</th>}
+                              {activeTab === 'courses' && <th className="px-6 py-4 hidden sm:table-cell">Featured</th>}
+                              <th className="px-4 sm:px-6 py-4 text-right">Actions</th>
                             </tr>
                           </thead>
                           <tbody className="divide-y divide-gray-50">
                             {filteredData.map((item) => (
-                              <tr key={item._id} className="hover:bg-[#f8fafc]/50 transition-colors">
-                                <td className="px-6 py-4">
+                              <tr key={item._id} className="hover:bg-[#f8fafc]/50 transition-colors text-sm">
+                                <td className="px-4 sm:px-6 py-4">
                                   <div className="flex items-center gap-3">
                                     <div className="w-10 h-10 rounded-full bg-[#14627a]/10 flex items-center justify-center text-[#14627a] font-bold text-sm overflow-hidden relative group/img">
                                       {activeTab === 'instructors' && item.img ? (
@@ -807,15 +1165,15 @@ export default function AdminDashboard() {
                                       </p>
                                       {activeTab === 'users' && (
                                         <div className="flex flex-col gap-0.5 mt-0.5">
-                                          <p className="text-xs text-gray-500">{item.email}</p>
-                                          <p className="text-[10px] text-gray-400 font-medium">{item.phone || 'No phone'}</p>
+                                          <p className="text-xs text-gray-500 line-clamp-1 hidden sm:block">{item.email}</p>
+                                          <p className="text-[10px] text-gray-400 font-medium hidden sm:block">{item.phone || 'No phone'}</p>
                                         </div>
                                       )}
                                       {activeTab === 'categories' && <p className="text-xs text-gray-500">slug: {item.slug}</p>}
                                     </div>
                                   </div>
                                 </td>
-                                <td className="px-6 py-4">
+                                <td className="px-6 py-4 hidden md:table-cell">
                                   <span className="text-sm font-medium text-gray-600 capitalize">
                                     {activeTab === 'users' ? (
                                       <select
@@ -847,14 +1205,14 @@ export default function AdminDashboard() {
                                   </div>
                                 </td>
                                 {activeTab === 'events' && (
-                                  <td className="px-6 py-4">
+                                  <td className="px-6 py-4 hidden lg:table-cell">
                                     <span className="text-sm text-gray-500 italic">
                                       {item.address || 'Online'}
                                     </span>
                                   </td>
                                 )}
                                 {activeTab === 'courses' && (
-                                  <td className="px-6 py-4">
+                                  <td className="px-6 py-4 hidden sm:table-cell">
                                     <button
                                       onClick={() => handleToggleFeatured(item)}
                                       className={`p-2 rounded-lg transition-colors ${item.isFeatured ? 'text-yellow-500 bg-yellow-50' : 'text-gray-300 hover:bg-gray-100'}`}
@@ -864,7 +1222,7 @@ export default function AdminDashboard() {
                                     </button>
                                   </td>
                                 )}
-                                <td className="px-6 py-4">
+                                <td className="px-4 sm:px-6 py-4">
                                   <div className="flex items-center justify-end gap-2">
                                     {activeTab === 'events' && (
                                       <button
@@ -923,12 +1281,12 @@ export default function AdminDashboard() {
               initial={{ opacity: 0, scale: 0.9, y: 20 }}
               animate={{ opacity: 1, scale: 1, y: 0 }}
               exit={{ opacity: 0, scale: 0.9, y: 20 }}
-              className="bg-white rounded-[30px] p-8 max-w-4xl w-full shadow-2xl overflow-hidden flex flex-col max-h-[90vh]"
+              className="bg-white rounded-2xl sm:rounded-[30px] p-4 sm:p-8 max-w-4xl w-full shadow-2xl overflow-hidden flex flex-col max-h-[95vh] sm:max-h-[90vh]"
             >
-              <div className="flex justify-between items-center mb-6">
+              <div className="flex justify-between items-center mb-4 sm:mb-6">
                 <div>
-                  <h2 className="text-2xl font-bold text-[#14627a]">Event Participants</h2>
-                  <p className="text-gray-500 text-sm">Registered users for: <span className="font-semibold text-gray-900">{selectedEvent?.title}</span></p>
+                  <h2 className="text-xl sm:text-2xl font-bold text-[#14627a]">Event Participants</h2>
+                  <p className="text-gray-500 text-xs sm:text-sm">Registered users for: <span className="font-semibold text-gray-900">{selectedEvent?.title}</span></p>
                 </div>
                 <button
                   onClick={() => setIsParticipantsModalOpen(false)}
@@ -953,35 +1311,35 @@ export default function AdminDashboard() {
                     <table className="w-full text-left border-collapse">
                       <thead>
                         <tr className="bg-gray-100/50 border-b border-gray-100">
-                          <th className="px-6 py-4 text-xs font-bold text-gray-500 uppercase tracking-wider">User</th>
-                          <th className="px-6 py-4 text-xs font-bold text-gray-500 uppercase tracking-wider">Contact</th>
-                          <th className="px-6 py-4 text-xs font-bold text-gray-500 uppercase tracking-wider">Registered At</th>
-                          <th className="px-6 py-4 text-xs font-bold text-gray-500 uppercase tracking-wider">Notes</th>
+                          <th className="px-4 sm:px-6 py-4 text-xs font-bold text-gray-500 uppercase tracking-wider">User</th>
+                          <th className="px-4 sm:px-6 py-4 text-xs font-bold text-gray-500 uppercase tracking-wider hidden sm:table-cell">Contact</th>
+                          <th className="px-4 sm:px-6 py-4 text-xs font-bold text-gray-500 uppercase tracking-wider">Registered At</th>
+                          <th className="px-4 sm:px-6 py-4 text-xs font-bold text-gray-500 uppercase tracking-wider hidden md:table-cell">Notes</th>
                         </tr>
                       </thead>
                       <tbody className="divide-y divide-gray-100 bg-white">
                         {participants.map((reg) => (
                           <tr key={reg._id} className="hover:bg-gray-50/50 transition-colors">
-                            <td className="px-6 py-4">
+                            <td className="px-4 sm:px-6 py-4">
                               <div className="flex items-center gap-3">
-                                <div className="w-8 h-8 rounded-full bg-[#14627a]/10 flex items-center justify-center text-[#14627a] font-bold text-xs uppercase">
+                                <div className="w-8 h-8 rounded-full bg-[#14627a]/10 flex items-center justify-center text-[#14627a] font-bold text-xs uppercase shrink-0">
                                   {reg.user?.firstName?.charAt(0) || 'U'}
                                 </div>
-                                <span className="text-sm font-bold text-gray-900">
+                                <span className="text-xs sm:text-sm font-bold text-gray-900 line-clamp-1">
                                   {reg.user ? `${reg.user.firstName} ${reg.user.lastName}` : 'Deleted User'}
                                 </span>
                               </div>
                             </td>
-                            <td className="px-6 py-4">
+                            <td className="px-4 sm:px-6 py-4 hidden sm:table-cell">
                               <div className="flex flex-col">
-                                <span className="text-sm text-gray-900">{reg.user?.email}</span>
-                                <span className="text-xs text-gray-500">{reg.user?.phone || 'No phone'}</span>
+                                <span className="text-xs sm:text-sm text-gray-900">{reg.user?.email}</span>
+                                <span className="text-[10px] sm:text-xs text-gray-500">{reg.user?.phone || 'No phone'}</span>
                               </div>
                             </td>
-                            <td className="px-6 py-4 text-sm text-gray-600">
+                            <td className="px-4 sm:px-6 py-4 text-[10px] sm:text-sm text-gray-600">
                               {new Date(reg.createdAt).toLocaleDateString()}
                             </td>
-                            <td className="px-6 py-4">
+                            <td className="px-4 sm:px-6 py-4 hidden md:table-cell">
                               <p className="text-xs text-gray-500 italic max-w-xs truncate" title={reg.notes}>
                                 {reg.notes || 'No notes'}
                               </p>
@@ -1015,18 +1373,18 @@ export default function AdminDashboard() {
               initial={{ opacity: 0, scale: 0.9, y: 30 }}
               animate={{ opacity: 1, scale: 1, y: 0 }}
               exit={{ opacity: 0, scale: 0.9, y: 30 }}
-              className="bg-white rounded-[32px] p-8 max-w-2xl w-full shadow-2xl relative overflow-hidden"
+              className="bg-white rounded-2xl sm:rounded-[32px] p-4 sm:p-8 max-w-2xl w-full shadow-2xl relative overflow-hidden max-h-[95vh] overflow-y-auto"
             >
               {/* Decorative Background */}
               <div className="absolute top-0 right-0 w-32 h-32 bg-[#14627a]/5 rounded-bl-full -z-0" />
               
               <div className="relative z-10">
-                <div className="flex justify-between items-center mb-10">
+                <div className="flex justify-between items-center mb-6 sm:mb-10">
                   <div>
-                    <h2 className="text-3xl font-extrabold text-gray-900">
+                    <h2 className="text-2xl sm:text-3xl font-extrabold text-gray-900">
                       {editingUser ? 'Edit' : 'Create'} <span className="text-[#14627a]">User</span>
                     </h2>
-                    <p className="text-gray-500 mt-1">Fill in the details below to {editingUser ? 'update' : 'add'} an account.</p>
+                    <p className="text-gray-500 text-xs sm:text-sm mt-1">Fill in the details below to {editingUser ? 'update' : 'add'} an account.</p>
                   </div>
                   <button onClick={() => setIsUserModalOpen(false)} className="p-3 hover:bg-gray-100 rounded-2xl transition-all">
                     <XCircle className="w-6 h-6 text-gray-400" />

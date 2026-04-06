@@ -1,5 +1,6 @@
 const asyncHandler = require('../middleware/asyncHandler');
 const { Event, EventRegistration } = require('../models');
+const { logActivity } = require('../utils/logger');
 
 exports.getEvents = asyncHandler(async (req, res) => {
   const { type, page = 1, limit = 20 } = req.query;
@@ -33,6 +34,10 @@ exports.registerEvent = asyncHandler(async (req, res) => {
   }
   const registration = await EventRegistration.create({ user: req.user.id, event: req.params.id });
   await event.incrementRegistration();
+
+  // Log the activity
+  await logActivity(req.user.id, 'event_registered', `Registered for event: ${event.title}`);
+
   res.status(201).json({ success: true, registration });
 });
 

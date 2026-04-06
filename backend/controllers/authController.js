@@ -1,5 +1,6 @@
 const asyncHandler = require('../middleware/asyncHandler');
-const { User } = require('../models');
+const { User, CourseApplication } = require('../models');
+const { logActivity } = require('../utils/logger');
 
 const sendTokenResponse = (user, statusCode, res) => {
   const token = user.getSignedToken();
@@ -49,6 +50,9 @@ exports.register = asyncHandler(async (req, res) => {
     phone 
   });
 
+  // Log the activity
+  await logActivity(user._id, 'user_joined', `New user registered: ${user.firstName} ${user.lastName}`);
+
   sendTokenResponse(user, 201, res);
 });
 
@@ -90,4 +94,33 @@ exports.logout = asyncHandler(async (req, res) => {
     sameSite: process.env.NODE_ENV === 'production' ? 'none' : 'lax'
   });
   res.json({ success: true, message: 'Logged out' });
+});
+
+exports.submitApplication = asyncHandler(async (req, res) => {
+  const { courseTitle, fullName, email, phoneNumber, educationLevel, note } = req.body;
+  
+  if (!courseTitle || !fullName || !email || !phoneNumber || !educationLevel) {
+    return res.status(400).json({ success: false, error: 'All primary fields are required' });
+  }
+
+  // Check if already applied
+  const existingApp = await CourseApplication.findOne({ user: req.user.id, courseTitle });
+  if (existingApp) {
+    return res.status(400).json({ success: false, error: 'You have already applied for this course' });
+  }
+
+  const application = await CourseApplication.create({
+    user: req.user.id,
+    courseTitle,
+    fullName,
+    email,
+    phoneNumber,
+    educationLevel,
+    note
+  });
+
+  // Log the activity
+  await logActivity(req.user.id, 'application_submitted', `Applied for course: ${courseTitle}`);
+
+  res.status(201).json({ success: true, application });
 });

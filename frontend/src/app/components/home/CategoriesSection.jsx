@@ -19,7 +19,7 @@ const CATEGORY_ICONS = {
 
 const DEFAULT_ICON = "bi-bookmark";
 
-export default function CategoriesSection() {
+export default function CategoriesSection({ title, subtitle }) {
   const [categories, setCategories] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
@@ -56,10 +56,10 @@ export default function CategoriesSection() {
           transition={{ duration: 0.5 }}
         >
           <h2 id="categories-heading" className="text-[32px] md:text-[40px] font-semibold text-[#06213d] mb-4">
-            Most <span className="text-[#14627a]">Popular</span> Categories
+            {title || "Most Popular Categories"}
           </h2>
           <p className="text-[18px] md:text-[20px] text-[#6d737a]">
-            Explore topics taught by world-class instructors.
+            {subtitle || "Explore topics taught by world-class instructors."}
           </p>
         </motion.div>
 

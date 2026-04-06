@@ -1,30 +1,72 @@
-import { useState } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useState, useEffect } from 'react';
+import { useNavigate, useLocation } from 'react-router-dom';
+import { AlertCircle } from 'lucide-react';
 import Header from '../components/ui/Header';
 import Footer from '../components/ui/Footer';
+import authService from '../services/authService';
+import applicationService from '../services/applicationService';
 
 export default function Apply() {
   const navigate = useNavigate();
+  const location = useLocation();
   const [formData, setFormData] = useState({
     name: '',
     email: '',
     phoneNumber: '',
     educationLevel: '',
-    course: ''
+    course: '',
+    note: ''
   });
 
-  const [focusedField, setFocusedField] = useState(null);
+  const [loading, setLoading] = useState(true);
   const [submitSuccess, setSubmitSuccess] = useState(false);
+  const [error, setError] = useState('');
 
-  // Dummy course data - will be replaced with API call
-  const courses = [
-    { id: 1, name: 'Web Development' },
-    { id: 2, name: 'IoT (Internet of Things)' },
-    { id: 3, name: 'Game Development' },
-    { id: 4, name: 'Machine Learning' },
-    { id: 5, name: 'Mobile App Development' },
-    { id: 6, name: 'Cloud Computing' }
-  ];
+  // Authentication and Data Prefill
+  useEffect(() => {
+    const fetchUserData = async () => {
+      try {
+        const user = authService.getCurrentUser();
+        if (!user) {
+          // If not logged in, redirect to login and preserve the current application details (like course)
+          const currentUrl = location.pathname + location.search;
+          navigate(`/login?redirect=${encodeURIComponent(currentUrl)}`);
+          return;
+        }
+
+        // Try to get fresh profile data from backend to ensure all fields like 'phone' are there
+        let profile = user;
+        try {
+          const response = await authService.getProfile();
+          if (response && response.user) {
+            profile = response.user;
+          }
+        } catch (err) {
+          console.warn('Failed to fetch fresh profile, using cached data');
+        }
+        
+        // Extract course from URL if available
+        const params = new URLSearchParams(location.search);
+        const courseParam = params.get('course') || '';
+
+        setFormData(prev => ({
+          ...prev,
+          name: profile.name || 
+                (profile.firstName && profile.lastName ? `${profile.firstName} ${profile.lastName}` : '') || 
+                profile.firstName || 
+                profile.username || 
+                'User',
+          email: profile.email || '',
+          phoneNumber: profile.phone || profile.mobile || profile.mobileNumber || profile.phoneNumber || 'Not Provided',
+          course: courseParam || 'No Course Selected'
+        }));
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchUserData();
+  }, [navigate, location.search]);
 
   const educationLevels = [
     'High School',
@@ -42,293 +84,201 @@ export default function Apply() {
     }));
   };
 
-  const handleSubmit = (e) => {
+  const handleSubmit = async (e) => {
     e.preventDefault();
-    // In a real app, this would submit the course application to the API
-    localStorage.setItem('applicantName', formData.name);
-    localStorage.setItem('applicantEmail', formData.email);
-    localStorage.setItem('applicantPhone', formData.phoneNumber);
-    localStorage.setItem('applicantEducation', formData.educationLevel);
-    localStorage.setItem('applicantCourse', formData.course);
-    
-    setSubmitSuccess(true);
-    setTimeout(() => navigate('/'), 1500);
+    setLoading(true);
+    setError('');
+    try {
+      await applicationService.submitApplication({
+        courseTitle: formData.course,
+        fullName: formData.name,
+        email: formData.email,
+        phoneNumber: formData.phoneNumber,
+        educationLevel: formData.educationLevel,
+        note: formData.note
+      });
+      setSubmitSuccess(true);
+      setTimeout(() => navigate('/'), 3000);
+    } catch (err) {
+      console.error('Submission failed:', err);
+      setError(err.data?.error || 'Failed to submit application. Please try again.');
+    } finally {
+      setLoading(false);
+    }
   };
 
   const styles = `
     @keyframes slideInUp {
-      from {
-        opacity: 0;
-        transform: translateY(30px);
-      }
-      to {
-        opacity: 1;
-        transform: translateY(0);
-      }
+      from { opacity: 0; transform: translateY(20px); }
+      to { opacity: 1; transform: translateY(0); }
     }
-
-    @keyframes fadeIn {
-      from {
-        opacity: 0;
-      }
-      to {
-        opacity: 1;
-      }
-    }
-
-    @keyframes slideInLeft {
-      from {
-        opacity: 0;
-        transform: translateX(-30px);
-      }
-      to {
-        opacity: 1;
-        transform: translateX(0);
-      }
-    }
-
-    @keyframes scaleIn {
-      from {
-        opacity: 0;
-        transform: scale(0.95);
-      }
-      to {
-        opacity: 1;
-        transform: scale(1);
-      }
-    }
-
-    @keyframes shimmer {
-      0% {
-        background-position: -1000px 0;
-      }
-      100% {
-        background-position: 1000px 0;
-      }
-    }
-
-    .animate-slide-in-up {
-      animation: slideInUp 0.6s ease-out forwards;
-    }
-
-    .animate-fade-in {
-      animation: fadeIn 0.6s ease-out forwards;
-    }
-
-    .animate-slide-in-left {
-      animation: slideInLeft 0.6s ease-out forwards;
-    }
-
-    .animate-scale-in {
-      animation: scaleIn 0.5s ease-out forwards;
-    }
-
-    .form-field {
-      animation: slideInUp 0.6s ease-out forwards;
-    }
-
-    .form-field:nth-child(1) { animation-delay: 0.1s; opacity: 0; }
-    .form-field:nth-child(2) { animation-delay: 0.2s; opacity: 0; }
-    .form-field:nth-child(3) { animation-delay: 0.3s; opacity: 0; }
-    .form-field:nth-child(4) { animation-delay: 0.4s; opacity: 0; }
-    .form-field:nth-child(5) { animation-delay: 0.5s; opacity: 0; }
-    .form-submit { animation: slideInUp 0.6s ease-out forwards; animation-delay: 0.6s; opacity: 0; }
-
+    .animate-slide-up { animation: slideInUp 0.5s ease-out forwards; }
+    
     .form-input:focus {
       box-shadow: 0 0 0 3px rgba(20, 98, 122, 0.1);
+      border-color: #14627a;
     }
-
-    .success-check {
-      animation: scaleIn 0.5s ease-out;
+    .form-input {
+      transition: all 0.2s ease-in-out;
+    }
+    .read-only-input {
+      background-color: #f8fafb;
+      border-color: #e2e8f0;
+      color: #64748b;
+      cursor: not-allowed;
     }
   `;
 
+  if (loading) {
+    return (
+      <div className="min-h-screen flex items-center justify-center bg-gray-50">
+        <div className="w-12 h-12 border-4 border-[#14627a] border-t-transparent rounded-full animate-spin"></div>
+      </div>
+    );
+  }
+
   return (
-    <div className="bg-gradient-to-b from-[#f0f7fa] to-white flex flex-col min-h-screen">
+    <div className="bg-[#f0f7fa]/30 flex flex-col min-h-screen font-outfit">
       <style>{styles}</style>
       <Header />
       
-      <div className="flex-1 flex items-center justify-center px-4 py-12">
-        <div className="w-full max-w-3xl">
-          {/* Form Container with Gradient Background */}
-          <div className="relative">
-            {/* Animated background gradient */}
-            <div className="absolute inset-0 bg-gradient-to-br from-[#14627a]/5 to-[#1a9b8e]/5 rounded-3xl blur-xl opacity-60"></div>
-            
-            {/* Main Form Card */}
-            <div className="relative bg-white rounded-3xl shadow-2xl p-8 md:p-12 border border-[#e0f2f7] overflow-hidden">
-              {/* Decorative top border accent */}
-              <div className="absolute top-0 left-0 right-0 h-1 bg-gradient-to-r from-[#14627a] via-[#1a9b8e] to-[#14627a]"></div>
+      <div className="flex-1 flex items-center justify-center px-4 py-12 md:py-20">
+        <div className="w-full max-w-2xl bg-white rounded-[2rem] shadow-xl border border-[#e0f2f7] overflow-hidden animate-slide-up">
+          {/* Top colored bar */}
+          <div className="h-2.5 bg-[#14627a]"></div>
 
-              {/* Header Section */}
-              <div className="mb-10 animate-slide-in-left">
-                <h1 className="font-['Public_Sans:SemiBold',sans-serif] font-semibold text-[32px] md:text-[44px] text-[#14627a] leading-tight mb-4">
-                  Course Application
-                </h1>
-                <div className="w-12 h-1 bg-gradient-to-r from-[#14627a] to-[#1a9b8e] rounded-full mb-4"></div>
-                <p className="font-['Public_Sans:Regular',sans-serif] font-normal text-[16px] md:text-[18px] text-[#6d737a] leading-relaxed">
-                  Take the first step towards your learning journey. Fill out the form below to apply for your desired course.
-                </p>
+          <div className="p-8 md:p-12">
+            <div className="mb-10">
+              <h1 className="text-[32px] md:text-[40px] font-bold text-[#14627a] mb-2">
+                Course Application
+              </h1>
+              <p className="text-[#64748b] text-[16px] md:text-[18px]">
+                Start your transformation today. Tell us a bit about your background.
+              </p>
+            </div>
+
+            {submitSuccess && (
+              <div className="mb-8 p-4 bg-green-50 border border-green-200 rounded-xl flex items-center gap-3 animate-pulse">
+                <div className="w-6 h-6 bg-green-500 rounded-full flex items-center justify-center text-white text-xs">✓</div>
+                <p className="text-green-700 font-medium">Application submitted successfully! Redirecting you home...</p>
               </div>
+            )}
 
-              {/* Success Message */}
-              {submitSuccess && (
-                <div className="mb-6 p-4 bg-green-50 border border-green-200 rounded-xl animate-scale-in">
-                  <div className="flex items-center gap-3">
-                    <div className="w-6 h-6 bg-green-500 rounded-full flex items-center justify-center text-white font-bold success-check">
-                      ✓
-                    </div>
-                    <p className="font-['Public_Sans:Medium',sans-serif] text-green-700">
-                      Application submitted successfully! Redirecting...
-                    </p>
+            {error && (
+              <div className="mb-8 p-4 bg-red-50 border border-red-200 rounded-xl flex items-center gap-3">
+                <AlertCircle className="w-6 h-6 text-red-500" />
+                <p className="text-red-700 font-medium">{error}</p>
+              </div>
+            )}
+
+            <form onSubmit={handleSubmit} className="space-y-8">
+              {/* Locked Information Section */}
+              <div className="space-y-6">
+                <h3 className="text-[#14627a] font-bold text-sm tracking-widest uppercase">
+                  YOUR INFORMATION (LOCKED)
+                </h3>
+                
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                  <div className="space-y-2">
+                    <label className="block text-[14px] font-semibold text-[#334155]">Full Name</label>
+                    <input
+                      type="text"
+                      value={formData.name}
+                      readOnly
+                      className="w-full px-4 py-3.5 rounded-xl border border-[#e2e8f0] bg-[#f8fafb] text-[#64748b] font-medium cursor-not-allowed outline-none"
+                    />
+                  </div>
+                  <div className="space-y-2">
+                    <label className="block text-[14px] font-semibold text-[#334155]">Email Address</label>
+                    <input
+                      type="email"
+                      value={formData.email}
+                      readOnly
+                      className="w-full px-4 py-3.5 rounded-xl border border-[#e2e8f0] bg-[#f8fafb] text-[#64748b] font-medium cursor-not-allowed outline-none"
+                    />
                   </div>
                 </div>
-              )}
 
-              {/* Form */}
-              <form onSubmit={handleSubmit} className="space-y-6">
-                {/* Full Name */}
-                <div className="form-field">
-                  <label htmlFor="name" className="block font-['Public_Sans:SemiBold',sans-serif] font-semibold text-[14px] md:text-[16px] text-[#1b1d1f] mb-3">
-                    <span className="text-[#d91e63]">*</span> Full Name
-                  </label>
-                  <input
-                    type="text"
-                    id="name"
-                    name="name"
-                    value={formData.name}
-                    onChange={handleChange}
-                    onFocus={() => setFocusedField('name')}
-                    onBlur={() => setFocusedField(null)}
-                    required
-                    className={`form-input w-full px-5 py-4 border-2 rounded-xl font-['Public_Sans:Regular',sans-serif] text-[14px] md:text-[16px] text-[#363a3d] transition-all duration-300 ${
-                      focusedField === 'name' ? 'border-[#14627a] bg-[#f0f9fc]' : 'border-[#e7e9eb] bg-white hover:border-[#14627a]/50'
-                    } focus:outline-none`}
-                    placeholder="Enter your full name"
-                  />
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                  <div className="space-y-2">
+                    <label className="block text-[14px] font-semibold text-[#334155]">Contact Number</label>
+                    <input
+                      type="text"
+                      value={formData.phoneNumber}
+                      readOnly
+                      className="w-full px-4 py-3.5 rounded-xl border border-[#e2e8f0] bg-[#f8fafb] text-[#64748b] font-medium cursor-not-allowed outline-none"
+                    />
+                  </div>
+                  <div className="space-y-2">
+                    <label className="block text-[14px] font-semibold text-[#334155]">Selected Course</label>
+                    <input
+                      type="text"
+                      value={formData.course}
+                      readOnly
+                      className="w-full px-4 py-3.5 rounded-xl border border-[#e2e8f0] bg-[#f8fafb] text-[#64748b] font-medium cursor-not-allowed outline-none"
+                    />
+                  </div>
                 </div>
-
-                {/* Email */}
-                <div className="form-field">
-                  <label htmlFor="email" className="block font-['Public_Sans:SemiBold',sans-serif] font-semibold text-[14px] md:text-[16px] text-[#1b1d1f] mb-3">
-                    <span className="text-[#d91e63]">*</span> Email Address
-                  </label>
-                  <input
-                    type="email"
-                    id="email"
-                    name="email"
-                    value={formData.email}
-                    onChange={handleChange}
-                    onFocus={() => setFocusedField('email')}
-                    onBlur={() => setFocusedField(null)}
-                    required
-                    className={`form-input w-full px-5 py-4 border-2 rounded-xl font-['Public_Sans:Regular',sans-serif] text-[14px] md:text-[16px] text-[#363a3d] transition-all duration-300 ${
-                      focusedField === 'email' ? 'border-[#14627a] bg-[#f0f9fc]' : 'border-[#e7e9eb] bg-white hover:border-[#14627a]/50'
-                    } focus:outline-none`}
-                    placeholder="Enter your email"
-                  />
-                </div>
-
-                {/* Phone Number */}
-                <div className="form-field">
-                  <label htmlFor="phoneNumber" className="block font-['Public_Sans:SemiBold',sans-serif] font-semibold text-[14px] md:text-[16px] text-[#1b1d1f] mb-3">
-                    <span className="text-[#d91e63]">*</span> Phone Number
-                  </label>
-                  <input
-                    type="tel"
-                    id="phoneNumber"
-                    name="phoneNumber"
-                    value={formData.phoneNumber}
-                    onChange={handleChange}
-                    onFocus={() => setFocusedField('phoneNumber')}
-                    onBlur={() => setFocusedField(null)}
-                    required
-                    className={`form-input w-full px-5 py-4 border-2 rounded-xl font-['Public_Sans:Regular',sans-serif] text-[14px] md:text-[16px] text-[#363a3d] transition-all duration-300 ${
-                      focusedField === 'phoneNumber' ? 'border-[#14627a] bg-[#f0f9fc]' : 'border-[#e7e9eb] bg-white hover:border-[#14627a]/50'
-                    } focus:outline-none`}
-                    placeholder="Enter your phone number"
-                  />
-                </div>
-
-                {/* Education Level */}
-                <div className="form-field">
-                  <label htmlFor="educationLevel" className="block font-['Public_Sans:SemiBold',sans-serif] font-semibold text-[14px] md:text-[16px] text-[#1b1d1f] mb-3">
-                    <span className="text-[#d91e63]">*</span> Education Level
-                  </label>
-                  <select
-                    id="educationLevel"
-                    name="educationLevel"
-                    value={formData.educationLevel}
-                    onChange={handleChange}
-                    onFocus={() => setFocusedField('educationLevel')}
-                    onBlur={() => setFocusedField(null)}
-                    required
-                    className={`form-input w-full px-5 py-4 border-2 rounded-xl font-['Public_Sans:Regular',sans-serif] text-[14px] md:text-[16px] text-[#363a3d] transition-all duration-300 appearance-none bg-white cursor-pointer ${
-                      focusedField === 'educationLevel' ? 'border-[#14627a] bg-[#f0f9fc]' : 'border-[#e7e9eb] bg-white hover:border-[#14627a]/50'
-                    } focus:outline-none`}
-                    style={{
-                      backgroundImage: "url(\"data:image/svg+xml;charset=UTF-8,%3csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%2314627a' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3e%3cpolyline points='6 9 12 15 18 9'%3e%3c/polyline%3e%3c/svg%3e\")",
-                      backgroundRepeat: 'no-repeat',
-                      backgroundPosition: 'right 1rem center',
-                      backgroundSize: '1.5em 1.5em',
-                      paddingRight: '2.5rem'
-                    }}
-                  >
-                    <option value="">Select your education level</option>
-                    {educationLevels.map((level) => (
-                      <option key={level} value={level}>{level}</option>
-                    ))}
-                  </select>
-                </div>
-
-                {/* Course Selection */}
-                <div className="form-field">
-                  <label htmlFor="course" className="block font-['Public_Sans:SemiBold',sans-serif] font-semibold text-[14px] md:text-[16px] text-[#1b1d1f] mb-3">
-                    <span className="text-[#d91e63]">*</span> Select Course
-                  </label>
-                  <select
-                    id="course"
-                    name="course"
-                    value={formData.course}
-                    onChange={handleChange}
-                    onFocus={() => setFocusedField('course')}
-                    onBlur={() => setFocusedField(null)}
-                    required
-                    className={`form-input w-full px-5 py-4 border-2 rounded-xl font-['Public_Sans:Regular',sans-serif] text-[14px] md:text-[16px] text-[#363a3d] transition-all duration-300 appearance-none bg-white cursor-pointer ${
-                      focusedField === 'course' ? 'border-[#14627a] bg-[#f0f9fc]' : 'border-[#e7e9eb] bg-white hover:border-[#14627a]/50'
-                    } focus:outline-none`}
-                    style={{
-                      backgroundImage: "url(\"data:image/svg+xml;charset=UTF-8,%3csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%2314627a' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3e%3cpolyline points='6 9 12 15 18 9'%3e%3c/polyline%3e%3c/svg%3e\")",
-                      backgroundRepeat: 'no-repeat',
-                      backgroundPosition: 'right 1rem center',
-                      backgroundSize: '1.5em 1.5em',
-                      paddingRight: '2.5rem'
-                    }}
-                  >
-                    <option value="">Choose a course to apply</option>
-                    {courses.map((course) => (
-                      <option key={course.id} value={course.name}>{course.name}</option>
-                    ))}
-                  </select>
-                </div>
-
-                {/* Submit Button */}
-                <button
-                  type="submit"
-                  disabled={submitSuccess}
-                  className="form-submit w-full bg-gradient-to-r from-[#14627a] to-[#0f4a5b] text-white px-6 py-4 rounded-xl font-['Public_Sans:SemiBold',sans-serif] text-[16px] hover:from-[#0f4a5b] hover:to-[#083a47] transition-all duration-300 transform hover:scale-[1.02] hover:shadow-xl shadow-lg mt-8 disabled:opacity-75 cursor-pointer"
-                >
-                  {submitSuccess ? 'Application Submitted!' : 'Submit Application'}
-                </button>
-              </form>
-
-              {/* Info Box */}
-              <div className="mt-8 p-5 bg-gradient-to-r from-[#14627a]/5 to-[#1a9b8e]/5 border border-[#14627a]/20 rounded-xl">
-                <p className="font-['Public_Sans:Regular',sans-serif] text-[13px] md:text-[14px] text-[#6d737a]">
-                  ℹ️ Please fill out all fields accurately. Your application will be reviewed within 2-3 business days.
-                </p>
               </div>
-            </div>
+
+              <div className="h-px bg-gray-100"></div>
+
+              {/* Editable Section */}
+              <div className="space-y-6">
+                <h3 className="text-[#14627a] font-bold text-sm tracking-widest uppercase">
+                  APPLICATION DETAILS
+                </h3>
+                
+                <div className="space-y-2">
+                  <label htmlFor="educationLevel" className="block text-[14px] font-semibold text-[#334155]">
+                    <span className="text-[#de3b40] mr-1">*</span>Highest Education Level
+                  </label>
+                  <div className="relative">
+                    <select
+                      id="educationLevel"
+                      name="educationLevel"
+                      value={formData.educationLevel}
+                      onChange={handleChange}
+                      required
+                      className="form-input w-full px-4 py-3.5 rounded-xl border border-[#e2e8f0] bg-white text-[#1e293b] font-medium outline-none appearance-none cursor-pointer"
+                    >
+                      <option value="" disabled>Select Level</option>
+                      {educationLevels.map((level) => (
+                        <option key={level} value={level}>{level}</option>
+                      ))}
+                    </select>
+                    <div className="absolute right-4 top-1/2 -translate-y-1/2 pointer-events-none">
+                      <svg className="w-5 h-5 text-[#64748b]" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M19 9l-7 7-7-7" />
+                      </svg>
+                    </div>
+                  </div>
+                </div>
+
+                <div className="space-y-2">
+                  <label htmlFor="note" className="block text-[14px] font-semibold text-[#334155]">
+                    Application Note (Optional)
+                  </label>
+                  <textarea
+                    id="note"
+                    name="note"
+                    value={formData.note}
+                    onChange={handleChange}
+                    rows="4"
+                    className="form-input w-full px-4 py-3.5 rounded-xl border border-[#e2e8f0] bg-white text-[#1e293b] font-medium outline-none resize-none"
+                    placeholder="Share your goals or any specific questions you have for the instructor..."
+                  ></textarea>
+                </div>
+              </div>
+
+              <button
+                type="submit"
+                disabled={submitSuccess}
+                className="w-full bg-[#14627a] text-white py-4 rounded-xl font-bold text-[18px] hover:bg-[#0f4a5b] transition-all transform hover:scale-[1.01] active:scale-[0.98] mt-4 disabled:opacity-70 disabled:cursor-not-allowed"
+              >
+                {submitSuccess ? 'Application Sent!' : 'Complete Application'}
+              </button>
+            </form>
           </div>
         </div>
       </div>
@@ -337,3 +287,4 @@ export default function Apply() {
     </div>
   );
 }
+

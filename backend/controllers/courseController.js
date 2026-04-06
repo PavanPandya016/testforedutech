@@ -1,5 +1,6 @@
 const asyncHandler = require('../middleware/asyncHandler');
 const { Course, CourseEnrollment } = require('../models');
+const { logActivity } = require('../utils/logger');
 
 exports.getCourses = asyncHandler(async (req, res) => {
   const { search, type, page = 1, limit = 20 } = req.query;
@@ -35,6 +36,10 @@ exports.enrollCourse = asyncHandler(async (req, res) => {
   }
   const enrollment = await CourseEnrollment.create({ user: req.user.id, course: req.params.id });
   await course.incrementEnrollment();
+
+  // Log the activity
+  await logActivity(req.user.id, 'course_enrolled', `Enrolled in course: ${course.title}`);
+
   res.status(201).json({ success: true, enrollment });
 });
 

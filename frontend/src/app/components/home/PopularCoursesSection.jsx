@@ -1,5 +1,5 @@
-import { useState, useCallback } from "react";
-import { motion } from "motion/react";
+import { useState, useCallback, useRef, useEffect } from "react";
+import { motion, useMotionValue } from "motion/react";
 import CourseCard from "./CourseCard";
 
 function CarouselControls({ page, pageCount, onPrev, onNext, onGoTo }) {
@@ -59,8 +59,24 @@ export default function PopularCoursesSection({ courses }) {
 
   const pageCount = courses.length;
   const [page, setPage] = useState(0);
+  const carouselRef = useRef(null);
+  const [itemWidth, setItemWidth] = useState(344); // Default fallback
 
-  const ITEM_WIDTH = 320 + 24; // card width + gap-6 (1.5rem = 24px)
+  useEffect(() => {
+    const updateWidth = () => {
+      if (carouselRef.current) {
+        const firstItem = carouselRef.current.children[0];
+        if (firstItem) {
+          // Card width + gap-6 (24px)
+          setItemWidth(firstItem.offsetWidth + 24);
+        }
+      }
+    };
+
+    updateWidth();
+    window.addEventListener("resize", updateWidth);
+    return () => window.removeEventListener("resize", updateWidth);
+  }, [courses]);
 
   const prev = useCallback(
     () => setPage((p) => (pageCount > 0 ? (p - 1 + pageCount) % pageCount : 0)),
@@ -100,13 +116,24 @@ export default function PopularCoursesSection({ courses }) {
             </h2>
           </motion.div>
 
-          <div className="flex-1 w-full overflow-hidden relative -m-10 p-10">
+          <div className="flex-1 w-full overflow-hidden relative -m-4 p-4 lg:-m-10 lg:p-10">
             <motion.div
-              className="flex gap-6"
-              style={{ x: -page * ITEM_WIDTH }}
+              ref={carouselRef}
+              className="flex gap-6 cursor-grab active:cursor-grabbing"
+              drag="x"
+              dragConstraints={{ right: 0, left: -(pageCount - 1) * itemWidth }}
+              animate={{ x: -page * itemWidth }}
               transition={{ type: "spring", stiffness: 300, damping: 30 }}
               initial={false}
               role="list"
+              onDragEnd={(e, { offset, velocity }) => {
+                const swipe = offset.x + velocity.x * 0.2;
+                if (swipe < -itemWidth / 4 && page < pageCount - 1) {
+                  setPage(page + 1);
+                } else if (swipe > itemWidth / 4 && page > 0) {
+                  setPage(page - 1);
+                }
+              }}
             >
               {courses.map((course, index) => (
                 <div key={course.id || index} role="listitem">

@@ -5,7 +5,7 @@
  * Throws an Error with status and data properties if the request fails.
  */
 
-const BASE_URL = import.meta.env.VITE_API_BASE_URL || '/api';
+const BASE_URL = import.meta.env.VITE_API_BASE_URL || 'http://localhost:5000/api';
 
 const handleResponse = async (response) => {
   if (!response.ok) {

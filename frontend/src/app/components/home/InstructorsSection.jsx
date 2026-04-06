@@ -1,6 +1,6 @@
 import { motion } from "motion/react";
 
-export default function InstructorsSection({ instructors }) {
+export default function InstructorsSection({ instructors, title, subtitle }) {
   return (
     <section className="py-16 px-4 sm:px-6 lg:px-8 bg-[rgba(235,243,255,0.7)]" aria-labelledby="instructors-heading">
       <div className="max-w-7xl mx-auto">
@@ -12,14 +12,14 @@ export default function InstructorsSection({ instructors }) {
           transition={{ duration: 0.5 }}
         >
           <h2 id="instructors-heading" className="text-[32px] md:text-[40px] font-semibold text-[#06213d] mb-4">
-            Our Best <span className="text-[#14627a]">Instructors</span>
+            {title || "Our Best Instructors"}
           </h2>
           <p className="text-[18px] md:text-[20px] text-[#6d737a]">
-            Learn from industry leaders who are passionate about teaching.
+            {subtitle || "Learn from industry leaders who are passionate about teaching."}
           </p>
         </motion.div>
 
-        <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-5 gap-6">
+        <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-6">
           {instructors.map((instructor, index) => (
             <motion.div
               key={instructor._id || instructor.id}

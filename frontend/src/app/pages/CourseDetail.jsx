@@ -56,14 +56,18 @@ const MainBody = () => {
     });
   };
 
-  const handleBuyNow = () => {
+  const COURSE_TITLE = "Introduction to Kubernetes";
+
+  const handleApply = () => {
     const user = authService.getCurrentUser();
     if (!user) {
-      navigate('/login');
+      // Redirect to login and preserve the course selection
+      const redirectUrl = encodeURIComponent(`/apply?course=${encodeURIComponent(COURSE_TITLE)}`);
+      navigate(`/login?redirect=${redirectUrl}`);
       return;
     }
-    setToastMessage('Successfully enrolled in course!');
-    setTimeout(() => setToastMessage(''), 3000);
+    // Pass the exact course title
+    navigate(`/apply?course=${encodeURIComponent(COURSE_TITLE)}`);
   };
 
   return (
@@ -81,7 +85,7 @@ const MainBody = () => {
           </div>
           
           <h1 className="text-[28px] sm:text-[36px] md:text-[42px] lg:text-[48px] font-bold text-[#14627a] mb-4 leading-tight">
-            Introduction to Kubernetes
+            {COURSE_TITLE}
           </h1>
           <p className="text-[14px] sm:text-[16px] md:text-[18px] text-[#6d737a] mb-6 leading-relaxed max-w-3xl">
             Want to learn Kubernetes? Get an in-depth primer on this powerful system for managing containerized applications in this free course.
@@ -300,12 +304,12 @@ const MainBody = () => {
                   <div className="text-sm text-[#6d737a]">Full Course + Exam</div>
                 </div>
                 <motion.button 
-                  onClick={handleBuyNow}
+                  onClick={handleApply}
                   className="w-full bg-gradient-to-r from-[#14627a] to-[#0f4a5b] text-white font-semibold py-3 md:py-4 rounded-lg hover:from-[#0f4a5b] hover:to-[#083a47] transition-all"
                   whileHover={{ scale: 1.02 }}
                   whileTap={{ scale: 0.98 }}
                 >
-                  BUY NOW
+                  APPLY NOW
                 </motion.button>
               </div>
               <div className="space-y-3 border-t border-[#e0e8f1] pt-6">

@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { Link, useNavigate } from 'react-router-dom';
+import { Link, useNavigate, useLocation } from 'react-router-dom';
 import { useForm } from 'react-hook-form';
 import Header from '../components/ui/Header';
 import Footer from '../components/ui/Footer';
@@ -8,6 +8,7 @@ import authService from '../services/authService';
 
 export default function Login() {
   const navigate = useNavigate();
+  const location = useLocation();
   const { register, handleSubmit, formState: { errors } } = useForm({
     defaultValues: {
       email: '',
@@ -33,7 +34,12 @@ export default function Login() {
       }
 
       setSubmitSuccess(true);
-      setTimeout(() => navigate('/'), 1500);
+      
+      // Determine redirect path
+      const params = new URLSearchParams(location.search);
+      const redirectPath = params.get('redirect') || '/';
+      
+      setTimeout(() => navigate(redirectPath), 1500);
     } catch (error) {
       console.error('Login error:', error);
       setLoginError(error.message || 'Invalid email or password. Please try again.');

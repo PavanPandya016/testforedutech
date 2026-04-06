@@ -17,6 +17,18 @@ export const adminService = {
   },
 
   /**
+   * Fetches public platform statistics (counts only).
+   */
+  getPublicStats: async () => {
+    try {
+      return await api.get('/admin/public-stats');
+    } catch (error) {
+      console.error('Error fetching public stats:', error);
+      throw error;
+    }
+  },
+
+  /**
    * Fetches all registered users.
    */
   getUsers: async () => {
@@ -163,6 +175,31 @@ export const adminService = {
       return data.data || [];
     } catch (error) {
       console.error(`Error fetching participants for event ${eventId}:`, error);
+      throw error;
+    }
+  },
+
+  /**
+   * Fetches all course applications.
+   */
+  getApplications: async () => {
+    try {
+      const data = await api.get('/admin/applications');
+      return data.data || [];
+    } catch (error) {
+      console.error('Error fetching course applications:', error);
+      throw error;
+    }
+  },
+
+  /**
+   * Updates the status of a course application.
+   */
+  updateApplicationStatus: async (id, status) => {
+    try {
+      return await api.put(`/admin/applications/${id}`, { status });
+    } catch (error) {
+      console.error(`Error updating application ${id} status:`, error);
       throw error;
     }
   }
