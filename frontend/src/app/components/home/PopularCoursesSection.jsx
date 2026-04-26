@@ -1,10 +1,10 @@
 import { useState, useCallback, useRef, useEffect } from "react";
-import { motion, useMotionValue } from "motion/react";
+import { m, useMotionValue } from "framer-motion";
 import CourseCard from "./CourseCard";
 
 function CarouselControls({ page, pageCount, onPrev, onNext, onGoTo }) {
   return (
-    <motion.div
+    <m.div
       className="flex items-center justify-center gap-8 mt-8"
       initial={{ opacity: 0 }}
       whileInView={{ opacity: 1 }}
@@ -26,7 +26,7 @@ function CarouselControls({ page, pageCount, onPrev, onNext, onGoTo }) {
       </div>
 
       <div className="flex gap-3">
-        <motion.button
+        <m.button
           onClick={onPrev}
           aria-label="Previous"
           className="bg-white p-2.5 rounded-lg shadow-sm border border-gray-200"
@@ -36,9 +36,9 @@ function CarouselControls({ page, pageCount, onPrev, onNext, onGoTo }) {
           <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" aria-hidden="true">
             <path d="M15 19.5L7.5 12L15 4.5" stroke="#363A3D" strokeLinecap="round" strokeLinejoin="round" strokeWidth="1.5" />
           </svg>
-        </motion.button>
+        </m.button>
 
-        <motion.button
+        <m.button
           onClick={onNext}
           aria-label="Next"
           className="bg-[#14627a] p-2.5 rounded-lg shadow-[0_10px_20px_rgba(20,98,122,0.2)]"
@@ -48,9 +48,9 @@ function CarouselControls({ page, pageCount, onPrev, onNext, onGoTo }) {
           <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" aria-hidden="true">
             <path d="M9 4.5L16.5 12L9 19.5" stroke="white" strokeLinecap="round" strokeLinejoin="round" strokeWidth="1.5" />
           </svg>
-        </motion.button>
+        </m.button>
       </div>
-    </motion.div>
+    </m.div>
   );
 }
 
@@ -60,23 +60,26 @@ export default function PopularCoursesSection({ courses }) {
   const pageCount = courses.length;
   const [page, setPage] = useState(0);
   const carouselRef = useRef(null);
-  const [itemWidth, setItemWidth] = useState(344); // Default fallback
+  const [itemWidth, setItemWidth] = useState(() => {
+    if (typeof window !== "undefined") {
+      return window.innerWidth < 640 ? 280 + 24 : 320 + 24;
+    }
+    return 344;
+  });
 
   useEffect(() => {
     const updateWidth = () => {
-      if (carouselRef.current) {
-        const firstItem = carouselRef.current.children[0];
-        if (firstItem) {
-          // Card width + gap-6 (24px)
-          setItemWidth(firstItem.offsetWidth + 24);
-        }
+      if (window.innerWidth < 640) {
+        setItemWidth(280 + 24); // Mobile card width + gap
+      } else {
+        setItemWidth(320 + 24); // Desktop card width + gap
       }
     };
 
     updateWidth();
     window.addEventListener("resize", updateWidth);
     return () => window.removeEventListener("resize", updateWidth);
-  }, [courses]);
+  }, []);
 
   const prev = useCallback(
     () => setPage((p) => (pageCount > 0 ? (p - 1 + pageCount) % pageCount : 0)),
@@ -95,7 +98,7 @@ export default function PopularCoursesSection({ courses }) {
     >
       <div className="max-w-7xl mx-auto">
         <div className="flex flex-col lg:flex-row gap-8 lg:gap-12 items-start lg:items-center mb-8">
-          <motion.div
+          <m.div
             className="flex-shrink-0"
             initial={{ opacity: 0, x: -50 }}
             whileInView={{ opacity: 1, x: 0 }}
@@ -114,17 +117,16 @@ export default function PopularCoursesSection({ courses }) {
               <br />
               Course
             </h2>
-          </motion.div>
+          </m.div>
 
           <div className="flex-1 w-full overflow-hidden relative -m-4 p-4 lg:-m-10 lg:p-10">
-            <motion.div
+            <m.div
               ref={carouselRef}
-              className="flex gap-6 cursor-grab active:cursor-grabbing"
+              className="flex gap-6 cursor-grab active:cursor-grabbing will-change-transform"
               drag="x"
               dragConstraints={{ right: 0, left: -(pageCount - 1) * itemWidth }}
               animate={{ x: -page * itemWidth }}
-              transition={{ type: "spring", stiffness: 300, damping: 30 }}
-              initial={false}
+              transition={{ duration: 0.5, ease: "easeOut" }}
               role="list"
               onDragEnd={(e, { offset, velocity }) => {
                 const swipe = offset.x + velocity.x * 0.2;
@@ -143,7 +145,7 @@ export default function PopularCoursesSection({ courses }) {
                   />
                 </div>
               ))}
-            </motion.div>
+            </m.div>
           </div>
         </div>
 

@@ -1,15 +1,16 @@
 import { useState, useEffect } from "react";
-import "bootstrap-icons/font/bootstrap-icons.css";
 
 import Header from "../components/ui/Header";
-import Footer from "../components/ui/Footer";
+const Footer = lazy(() => import("../components/ui/Footer"));
 
 // Sections
 import HeroSection from "../components/home/HeroSection";
-import PopularCoursesSection from "../components/home/PopularCoursesSection";
-import CategoriesSection from "../components/home/CategoriesSection";
-import InstructorsSection from "../components/home/InstructorsSection";
-import CtaSection from "../components/home/CtaSection";
+import { lazy, Suspense } from "react";
+
+const PopularCoursesSection = lazy(() => import("../components/home/PopularCoursesSection"));
+const CategoriesSection = lazy(() => import("../components/home/CategoriesSection"));
+const InstructorsSection = lazy(() => import("../components/home/InstructorsSection"));
+const CtaSection = lazy(() => import("../components/home/CtaSection"));
 import adminService from "../services/adminService";
 import courseService from "../services/courseService";
 import instructorService from "../services/instructorService";
@@ -73,25 +74,38 @@ export default function Home() {
           stats={stats}
           subtitle={settings?.heroSubtitle}
         />
-        <PopularCoursesSection courses={featuredCourses} />
-        <CategoriesSection
-          title={settings?.categoriesTitle}
-          subtitle={settings?.categoriesSubtitle}
-        />
-        <InstructorsSection
-          instructors={instructors}
-          title={settings?.instructorsTitle}
-          subtitle={settings?.instructorsSubtitle}
-        />
-        <CtaSection
-          image={settings?.ctaImage}
-          title={settings?.ctaTitle}
-          subtitle={settings?.ctaSubtitle}
-          buttonText={settings?.ctaButtonText}
-          buttonLink={settings?.ctaButtonLink}
-        />
+        <Suspense fallback={<div className="min-h-[600px] bg-gray-50 animate-pulse" />}>
+          <PopularCoursesSection courses={featuredCourses} />
+        </Suspense>
+
+        <Suspense fallback={<div className="min-h-[400px] bg-white animate-pulse" />}>
+          <CategoriesSection
+            title={settings?.categoriesTitle}
+            subtitle={settings?.categoriesSubtitle}
+          />
+        </Suspense>
+
+        <Suspense fallback={<div className="min-h-[500px] bg-gray-50 animate-pulse" />}>
+          <InstructorsSection
+            instructors={instructors}
+            title={settings?.instructorsTitle}
+            subtitle={settings?.instructorsSubtitle}
+          />
+        </Suspense>
+
+        <Suspense fallback={<div className="min-h-[600px] bg-gray-50 animate-pulse" />}>
+          <CtaSection
+            image={settings?.ctaImage}
+            title={settings?.ctaTitle}
+            subtitle={settings?.ctaSubtitle}
+            buttonText={settings?.ctaButtonText}
+            buttonLink={settings?.ctaButtonLink}
+          />
+        </Suspense>
       </main>
-      <Footer settings={settings} />
+      <Suspense fallback={<div className="min-h-[300px] bg-white" />}>
+        <Footer settings={settings} />
+      </Suspense>
     </div>
   );
 }

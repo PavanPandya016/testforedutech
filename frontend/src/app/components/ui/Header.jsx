@@ -1,6 +1,6 @@
 import { Link, useLocation, useNavigate } from "react-router-dom";
 import { useState, useEffect } from "react";
-import { motion, AnimatePresence } from "framer-motion";
+import { m, AnimatePresence } from "framer-motion";
 import svgPaths from "../../../imports/svg-go1x4xx39u";
 import authService from "../../services/authService";
 
@@ -15,6 +15,7 @@ function Lock() {
         fill="none"
         preserveAspectRatio="none"
         viewBox="0 0 24 24"
+        aria-hidden="true"
       >
         <path
           d={svgPaths.p21f4c00}
@@ -43,9 +44,16 @@ export default function Header() {
   const location = useLocation();
   const navigate = useNavigate();
   const [isMenuOpen, setIsMenuOpen] = useState(false);
-  const [isLoggedIn, setIsLoggedIn] = useState(false);
-  const [isAdmin, setIsAdmin] = useState(false);
-  const [userName, setUserName] = useState("");
+  const [isLoggedIn, setIsLoggedIn] = useState(() => !!authService.getCurrentUser());
+  const [isAdmin, setIsAdmin] = useState(() => {
+    const user = authService.getCurrentUser();
+    return user?.role === 'admin' || user?.role === 'instructor';
+  });
+  const [userName, setUserName] = useState(() => {
+    const user = authService.getCurrentUser();
+    const name = user?.name || (user?.email ? user.email.split('@')[0] : "User");
+    return typeof name === 'string' ? name : "User";
+  });
 
   /* =========================
      Logout Handler
@@ -95,18 +103,15 @@ export default function Header() {
      JSX
   ========================= */
   return (
-    <motion.div
+    <m.div
       className="bg-white w-full shadow-sm sticky top-0 z-50"
-      initial={{ y: -100 }}
-      animate={{ y: 0 }}
-      transition={{ duration: 0.5 }}
     >
       <div className="border-b border-gray-200">
         <div className="max-w-7xl mx-auto px-4 flex items-center justify-between h-20">
           {/* =========================
              Logo
           ========================= */}
-          <motion.div whileHover={{ scale: 1.05 }} whileTap={{ scale: 0.95 }}>
+          <m.div whileHover={{ scale: 1.05 }} whileTap={{ scale: 0.95 }}>
             <Link
               to="/"
               className="text-[48px] font-bold italic font-['PT_Serif',serif]"
@@ -114,23 +119,14 @@ export default function Header() {
               <span className="text-[#14627a]">edu</span>
               <span className="text-[#ffc27a]">Tech</span>
             </Link>
-          </motion.div>
+          </m.div>
 
           {/* =========================
              Desktop Navigation
           ========================= */}
           <div className="hidden lg:flex items-center gap-2">
-            {baseLinks.map((link, index) => (
-              <motion.div
-                key={link.path}
-                initial={{ opacity: 0, y: -10 }}
-                animate={{ opacity: 1, y: 0 }}
-                transition={{
-                  delay: index * 0.05,
-                  type: "spring",
-                  stiffness: 300,
-                }}
-              >
+            {baseLinks.map((link) => (
+              <div key={link.path}>
                 <Link
                   to={link.path}
                   className={`px-5 py-2 rounded-lg transition-all ${
@@ -141,18 +137,10 @@ export default function Header() {
                 >
                   {link.label}
                 </Link>
-              </motion.div>
+              </div>
             ))}
             {isAdmin && (
-              <motion.div
-                initial={{ opacity: 0, y: -10 }}
-                animate={{ opacity: 1, y: 0 }}
-                transition={{
-                  delay: baseLinks.length * 0.05,
-                  type: "spring",
-                  stiffness: 300,
-                }}
-              >
+              <div>
                 <Link
                   to="/admin"
                   className={`px-5 py-2 rounded-lg transition-all ${
@@ -163,7 +151,7 @@ export default function Header() {
                 >
                   Admin
                 </Link>
-              </motion.div>
+              </div>
             )}
           </div>
 
@@ -212,6 +200,7 @@ export default function Header() {
           <button
             onClick={toggleMenu}
             className="lg:hidden p-2 rounded-md hover:bg-gray-100"
+            aria-label={isMenuOpen ? "Close menu" : "Open menu"}
           >
             {isMenuOpen ? "✕" : "☰"}
           </button>
@@ -223,7 +212,7 @@ export default function Header() {
       ========================= */}
       <AnimatePresence>
         {isMenuOpen && (
-          <motion.div
+          <m.div
             className="lg:hidden bg-white border-b shadow-md"
             initial={{ opacity: 0, height: 0 }}
             animate={{ opacity: 1, height: "auto" }}
@@ -288,9 +277,9 @@ export default function Header() {
                 )}
               </div>
             </div>
-          </motion.div>
+          </m.div>
         )}
       </AnimatePresence>
-    </motion.div>
+    </m.div>
   );
 }

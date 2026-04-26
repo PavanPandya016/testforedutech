@@ -1,4 +1,5 @@
-import { motion } from "motion/react";
+import { m } from "framer-motion";
+import { getOptimizedImage } from "../../utils/imageOptimizer";
 
 const picsum = (seed, w, h) => `https://picsum.photos/seed/${seed}/${w}/${h}`;
 
@@ -14,16 +15,11 @@ function DecorCircle({ color, size, style, className = "" }) {
 
 function SpinningStarDecor({ className = "" }) {
   return (
-    <motion.div
-      className={`absolute ${className}`}
-      animate={{ rotate: [0, 360] }}
-      transition={{ duration: 20, repeat: Infinity, ease: "linear" }}
-      aria-hidden="true"
-    >
+    <div className={`absolute ${className}`} aria-hidden="true">
       <svg className="w-10 h-10" viewBox="0 0 42 42" fill="#FFC27A">
         <path d="M21 0C21 11.598 11.598 21 0 21C11.598 21 21 30.402 21 42C21 30.402 30.402 21 42 21C30.402 21 21 11.598 21 0Z" />
       </svg>
-    </motion.div>
+    </div>
   );
 }
 
@@ -42,7 +38,7 @@ export default function CtaSection({ image, title, subtitle, buttonText, buttonL
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-12 items-center">
 
           {/* Image */}
-          <motion.div
+          <m.div
             className="relative"
             initial={{ opacity: 0, x: -50 }}
             whileInView={{ opacity: 1, x: 0 }}
@@ -51,14 +47,19 @@ export default function CtaSection({ image, title, subtitle, buttonText, buttonL
           >
             {ctaImage && (
               <div className="border-2 border-[#0f4a63] rounded-[40px] md:rounded-[70px] p-4 md:p-8 overflow-hidden">
-                <img src={ctaImage} alt="Promotion" className="rounded-[30px] md:rounded-[70px] w-full h-full object-cover" />
+                <img 
+                  src={getOptimizedImage(ctaImage, { width: 800, height: 600 })} 
+                  alt="Promotion" 
+                  className="rounded-[30px] md:rounded-[70px] w-full h-full object-cover" 
+                  loading="lazy"
+                />
               </div>
             )}
             <SpinningStarDecor className="-right-8 top-1/2 -translate-y-1/2" />
-          </motion.div>
+          </m.div>
 
           {/* Copy */}
-          <motion.div
+          <m.div
             className="space-y-8"
             initial={{ opacity: 0, x: 50 }}
             whileInView={{ opacity: 1, x: 0 }}
@@ -71,15 +72,15 @@ export default function CtaSection({ image, title, subtitle, buttonText, buttonL
             <p className="text-[20px] md:text-[24px] text-[#06213d]">
               {subtitle || "Join thousands of learners and start building real-world skills today."}
             </p>
-            <motion.a
+            <m.a
               href={buttonLink || "/signup"}
               className="inline-block bg-[#14627a] text-white px-8 py-4 rounded-lg text-[16px] font-medium"
               whileHover={{ scale: 1.05, boxShadow: "0 10px 30px rgba(20,98,122,0.3)" }}
               whileTap={{ scale: 0.95 }}
             >
               {buttonText || "Sign up for Free"}
-            </motion.a>
-          </motion.div>
+            </m.a>
+          </m.div>
         </div>
       </div>
     </section>

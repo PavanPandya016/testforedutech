@@ -1,6 +1,7 @@
-import { motion } from "motion/react";
+import { m } from "framer-motion";
 import { Link } from "react-router-dom";
 import StarRating from "../ui/StarRating";
+import { getOptimizedImage } from "../../utils/imageOptimizer";
 
 function ArrowUpRightIcon({ color = "#6D737A" }) {
   return (
@@ -14,7 +15,7 @@ function ArrowUpRightIcon({ color = "#6D737A" }) {
 export default function CourseCard({ course, index }) {
   const { id, title, category, price, rating, reviews, image, description } = course;
   return (
-    <motion.div
+    <m.div
       className="flex-shrink-0 w-[280px] sm:w-[320px] group"
       initial={{ opacity: 0, y: 20 }}
       whileInView={{ opacity: 1, y: 0 }}
@@ -22,13 +23,21 @@ export default function CourseCard({ course, index }) {
       transition={{ duration: 0.5, delay: index * 0.1 }}
     >
       <Link to={`/apply?course=${encodeURIComponent(title)}`} className="block h-full" aria-label={`Apply for ${title}`}>
-        <motion.article
+        <m.article
           className="bg-white rounded-2xl overflow-hidden h-full shadow-[0_4px_20px_rgba(0,0,0,0.05)] border border-gray-100"
           whileHover={{ y: -10, boxShadow: "0 20px 40px rgba(20,98,122,0.12)" }}
           transition={{ duration: 0.3 }}
         >
           <div className="relative h-52 overflow-hidden">
-            <img src={image} alt={title} className="w-full h-full object-cover" loading="lazy" />
+            <img 
+              src={getOptimizedImage(image, { width: 400, height: 300 })} 
+              alt={title} 
+              width="400"
+              height="300"
+              decoding="async"
+              className="w-full h-full object-cover" 
+              loading="lazy" 
+            />
             <span className="absolute top-4 left-4 bg-white px-3 py-1.5 rounded-md text-sm font-medium text-[#1b1d1f] shadow-sm">
               {typeof category === 'object' ? (category.name || 'General') : (category || 'General')}
             </span>
@@ -58,18 +67,18 @@ export default function CourseCard({ course, index }) {
                   {price === 0 ? <span className="text-green-600">FREE</span> : `$${price.toLocaleString()}`}
                 </span>
               </div>
-              <motion.div
+              <m.div
                 className="flex items-center gap-2 px-4 py-2.5 rounded-xl font-bold text-sm bg-[#06213d] text-white shadow-[0_4px_12px_rgba(0,0,0,0.2)]"
                 whileHover={{ scale: 1.05, backgroundColor: "#14627a" }}
                 whileTap={{ scale: 0.95 }}
               >
                 <span>Enroll Now</span>
                 <ArrowUpRightIcon color="white" />
-              </motion.div>
+              </m.div>
             </div>
           </div>
-        </motion.article>
+        </m.article>
       </Link>
-    </motion.div>
+    </m.div>
   );
 }

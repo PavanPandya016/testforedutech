@@ -26,19 +26,31 @@ export default defineConfig({
       output: {
         manualChunks(id) {
           if (id.includes('node_modules')) {
-            if (id.includes('@radix-ui')) {
-              return 'radix';
+            if (id.includes('react-dom')) {
+              return 'v-react-dom';
             }
-            if (id.includes('@tiptap')) {
-              return 'editor';
+            if (id.includes('node_modules/react/') || id.includes('node_modules/react-is/') || id.includes('node_modules/scheduler/')) {
+              return 'v-react';
             }
-            if (id.includes('lucide-react') || id.includes('react-icons') || id.includes('@mui/icons-material')) {
-              return 'icons';
+            if (id.includes('react-router')) {
+              return 'v-router';
             }
             if (id.includes('framer-motion') || id.includes('motion')) {
-              return 'animations';
+              return 'v-motion';
             }
-            return 'vendor';
+            if (id.includes('lucide-react')) {
+              return 'v-lucide';
+            }
+            if (id.includes('@mui')) {
+              return 'v-mui';
+            }
+            if (id.includes('@radix-ui')) {
+              return 'v-radix';
+            }
+            if (id.includes('@tiptap') || id.includes('prosemirror')) {
+              return 'v-editor';
+            }
+            return 'v-vendor';
           }
         }
       }

@@ -1,4 +1,4 @@
-import { motion } from 'framer-motion';
+import { m } from 'framer-motion';
 import { ChevronRight } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 
@@ -12,7 +12,7 @@ export default function KeepReadingCard({ article }) {
   const initials = article.author.split(' ').map(n => n[0]).join('').toUpperCase();
 
   return (
-    <motion.div
+    <m.div
       variants={scaleIn}
       initial="hidden"
       whileInView="visible"
@@ -22,7 +22,7 @@ export default function KeepReadingCard({ article }) {
       className="bg-[rgba(255,255,255,0.8)] rounded-2xl shadow-[0px_20px_25px_-5px_rgba(0,0,0,0.1)] overflow-hidden cursor-pointer group"
     >
       <div className="relative h-48 sm:h-[224px] overflow-hidden">
-        <motion.img
+        <m.img
           whileHover={{ scale: 1.1 }}
           transition={{ duration: 0.5 }}
           src={article.image}
@@ -52,6 +52,6 @@ export default function KeepReadingCard({ article }) {
           </span>
         </div>
       </div>
-    </motion.div>
+    </m.div>
   );
 }

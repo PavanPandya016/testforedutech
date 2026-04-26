@@ -1,6 +1,6 @@
-import { useState, useEffect, useMemo } from 'react';
-import { useParams, Link, useNavigate } from 'react-router-dom';
-import { motion } from 'framer-motion';
+import React, { useState, useEffect, useMemo } from 'react';
+import { useParams, useNavigate, Link } from 'react-router-dom';
+import { m } from 'framer-motion';
 import { Edit, Trash2, ChevronRight } from 'lucide-react';
 import Header from '../components/ui/Header';
 import Footer from '../components/ui/Footer';
@@ -154,7 +154,7 @@ export default function BlogDetail() {
 
         {/* Admin/Instructor Actions - only shown to authorized users */}
         {(userRole === 'admin' || userRole === 'instructor' || (blog.authorId && userId === blog.authorId)) && (
-          <motion.div
+          <m.div
             initial={{ opacity: 0, y: -10 }}
             animate={{ opacity: 1, y: 0 }}
             className="mb-8 flex gap-4 justify-end"
@@ -171,11 +171,11 @@ export default function BlogDetail() {
             >
               <Trash2 size={18} /> Delete Post
             </button>
-          </motion.div>
+          </m.div>
         )}
 
         {/* Blog Header */}
-        <motion.div
+        <m.div
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.6 }}
@@ -208,10 +208,10 @@ export default function BlogDetail() {
             <div className="w-1.5 h-1.5 bg-gray-300 rounded-full" />
             <span>{blog.readTime}</span>
           </div>
-        </motion.div>
+        </m.div>
 
         {/* Hero Image */}
-        <motion.div
+        <m.div
           initial={{ opacity: 0, scale: 0.95 }}
           animate={{ opacity: 1, scale: 1 }}
           transition={{ duration: 0.8, delay: 0.2 }}
@@ -222,7 +222,7 @@ export default function BlogDetail() {
             alt={blog.title}
             className="w-full h-auto max-h-[600px] object-cover"
           />
-        </motion.div>
+        </m.div>
 
         <div className="grid grid-cols-1 lg:grid-cols-12 gap-12 lg:gap-8 max-w-[1000px] mx-auto">
           {/* Table of Contents Sidbar */}
@@ -234,7 +234,7 @@ export default function BlogDetail() {
           <div className="lg:col-span-9">
             {/* Excerpt */}
             {blog.excerpt && (
-              <motion.div
+              <m.div
                 initial={{ opacity: 0, y: 20 }}
                 whileInView={{ opacity: 1, y: 0 }}
                 viewport={{ once: true, amount: 0.3 }}
@@ -244,11 +244,11 @@ export default function BlogDetail() {
                 <p className="text-xl sm:text-2xl text-[#14627a] font-medium leading-relaxed italic">
                   "{blog.excerpt}"
                 </p>
-              </motion.div>
+              </m.div>
             )}
 
             {/* Blog Content */}
-            <motion.div
+            <m.div
               initial={{ opacity: 0 }}
               whileInView={{ opacity: 1 }}
               viewport={{ once: true }}
@@ -268,33 +268,33 @@ export default function BlogDetail() {
                 html { scroll-behavior: smooth; }
               `}} />
               <div dangerouslySetInnerHTML={{ __html: blogContent }}></div>
-            </motion.div>
+            </m.div>
             {/* Author Bio Section */}
             <AuthorBio author={blog.author} category={blog.category} />
           </div>
         </div>
 
         {/* Keep Reading Section */}
-        <motion.div
+        <m.div
           initial="hidden"
           whileInView="visible"
           viewport={{ once: true, amount: 0.3 }}
           variants={staggerContainer}
           className="mb-16"
         >
-          <motion.h2
+          <m.h2
             variants={fadeInUp}
             className="font-['Merriweather:Bold',sans-serif] text-3xl sm:text-4xl text-[#101828] mb-8 sm:mb-12"
           >
             Keep reading
-          </motion.h2>
+          </m.h2>
 
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 sm:gap-8">
             {keepReading.map((article) => (
               <KeepReadingCard key={article.id} article={article} />
             ))}
           </div>
-        </motion.div>
+        </m.div>
       </main>
 
       <Footer />

@@ -1,6 +1,8 @@
 import { useState } from "react";
-import { motion } from "motion/react";
+import { m } from "framer-motion";
 import { useNavigate } from "react-router-dom";
+import { getOptimizedImage } from "../../utils/imageOptimizer";
+import { Search } from "lucide-react";
 
 function DecorCircle({ color, size, style, className = "" }) {
   return (
@@ -43,41 +45,35 @@ export default function HeroSection({ images, stats, subtitle }) {
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-12 items-center">
 
           {/* Copy */}
-          <motion.div
+          <m.div
             className="text-[#06213d] space-y-6 order-2 lg:order-1"
-            initial={{ opacity: 0, x: -50 }}
-            animate={{ opacity: 1, x: 0 }}
-            transition={{ duration: 0.8 }}
+            initial={{ opacity: 0, y: 10 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.5 }}
           >
 
 
-            <motion.h1
+            <m.h1
               className="text-[40px] sm:text-[48px] lg:text-[56px] font-semibold leading-tight"
-              initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.5, delay: 0.1 }}
+              initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ duration: 0.4, delay: 0.1 }}
             >
               Access To{" "}
-              <motion.span
-                className="text-[#14627a]"
-                animate={{ scale: [1, 1.05, 1] }}
-                transition={{ duration: 2, repeat: Infinity }}
-              >
-
+              <m.span className="text-[#14627a]">
                 {displayCourses}
-
-              </motion.span>{" "}
+              </m.span>{" "}
               Courses
               <br />from <span className="text-[#14627a]">{displayInstructors}</span> Instructors
               <br />& Institutions
-            </motion.h1>
+            </m.h1>
 
-            <motion.p
+            <m.p
               className="text-[18px] md:text-[20px] text-[#6d737a]"
               initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.5, delay: 0.2 }}
             >
               {subtitle || "Learn at your own pace with world-class instructors and institutions."}
-            </motion.p>
+            </m.p>
 
-            <motion.div
+            <m.div
               className="flex flex-col sm:flex-row gap-4"
               initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.5, delay: 0.3 }}
             >
@@ -91,52 +87,68 @@ export default function HeroSection({ images, stats, subtitle }) {
                 onKeyDown={handleKeyDown}
                 className="flex-1 px-6 py-4 rounded-lg text-[16px] text-[#6d737a] bg-white focus:outline-none focus:ring-2 focus:ring-[#14627a] shadow-sm"
               />
-              <motion.button
+              <m.button
                 onClick={handleSearch}
                 className="bg-[#14627a] text-white px-8 py-4 rounded-lg text-[16px] font-medium flex items-center justify-center gap-2"
                 whileHover={{ scale: 1.05, boxShadow: "0 10px 30px rgba(20,98,122,0.3)" }}
                 whileTap={{ scale: 0.95 }}
               >
-                <i className="bi-search text-lg" aria-hidden="true" />
+                  <Search className="w-5 h-5" aria-hidden="true" />
                 Search
-              </motion.button>
-            </motion.div>
-          </motion.div>
+              </m.button>
+            </m.div>
+          </m.div>
 
           {/* Images */}
-          <motion.div
-            className="relative h-auto lg:h-[400px] mt-8 lg:mt-0 order-1 lg:order-2"
-            initial={{ opacity: 0, x: 100 }}
-            whileInView={{ opacity: 1, x: 0 }}
-            viewport={{ once: true }}
-            transition={{ duration: 0.8, delay: 0.2 }}
-            aria-hidden="true"
+          <m.div
+            className="relative h-[300px] sm:h-[400px] lg:h-[400px] mt-8 lg:mt-0 order-1 lg:order-2"
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            transition={{ duration: 0.6, delay: 0.2 }}
           >
-            {images?.[0] && (
-              <motion.img
-                src={images[0]}
-                alt=""
-                className="relative lg:absolute rounded-lg shadow-xl w-full lg:w-[50%] max-h-[300px] sm:max-h-[400px] lg:max-h-none object-cover rotate-0 lg:-rotate-5 z-10 lg:left-[5%] lg:top-0 mx-auto lg:mx-0"
-                whileHover={{ zIndex: 50, scale: 1.05, rotate: -2 }}
-                transition={{ duration: 0.3 }}
-                fetchpriority="high"
-                loading="eager"
-              />
-            )}
+            <div 
+              className="relative lg:absolute rounded-lg shadow-xl w-full lg:w-[50%] h-full bg-gray-100 rotate-0 lg:-rotate-5 z-10 lg:left-[5%] lg:top-0 mx-auto lg:mx-0 overflow-hidden"
+            >
+              {images?.[0] ? (
+                <m.img
+                  src={getOptimizedImage(images[0], { width: 600, height: 400 })}
+                  alt="Students learning and collaborating on eduTech"
+                  width="600"
+                  height="400"
+                  decoding="async"
+                  className="w-full h-full object-cover"
+                  whileHover={{ scale: 1.05, rotate: -2 }}
+                  transition={{ duration: 0.3 }}
+                  fetchpriority="high"
+                  loading="eager"
+                />
+              ) : (
+                <div className="w-full h-full bg-gray-200 animate-pulse" />
+              )}
+            </div>
 
-            {images?.[1] && (
-              <motion.img
-                src={images[1]}
-                alt=""
-                className="absolute rounded-lg shadow-2xl w-[43%] lg:w-[48%] rotate-4 z-20 hidden lg:block"
-                style={{ right: "5%", top: "10%" }}
-                whileHover={{ zIndex: 50, scale: 1.05, rotate: 6 }}
-                transition={{ duration: 0.3 }}
-                fetchpriority="high"
-                loading="eager"
-              />
-            )}
-          </motion.div>
+            <div 
+              className="absolute rounded-lg shadow-2xl w-[43%] lg:w-[48%] h-[350px] bg-gray-200 rotate-4 z-20 hidden lg:block overflow-hidden"
+              style={{ right: "5%", top: "10%" }}
+            >
+              {images?.[1] ? (
+                <m.img
+                  src={getOptimizedImage(images[1], { width: 500, height: 350 })}
+                  alt="Expert instructor teaching a course"
+                  width="500"
+                  height="350"
+                  decoding="async"
+                  className="w-full h-full object-cover"
+                  whileHover={{ scale: 1.05, rotate: 6 }}
+                  transition={{ duration: 0.3 }}
+                  fetchpriority="high"
+                  loading="eager"
+                />
+              ) : (
+                <div className="w-full h-full bg-gray-300 animate-pulse" />
+              )}
+            </div>
+          </m.div>
         </div>
       </div>
     </section>

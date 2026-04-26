@@ -117,21 +117,21 @@ function EventCard({ id, _id, month, day, title, time, location, bgColor, type, 
       )}
 
       <div className={`p-5 sm:p-6 space-y-3 sm:space-y-4 ${type === 'past' ? 'opacity-75' : ''}`}>
-        <div className="font-['Public_Sans:Bold',sans-serif] font-bold text-[36px] sm:text-[44px] md:text-[48px] text-white tracking-[0.36px]">
+        <div className="font-bold text-[36px] sm:text-[44px] md:text-[48px] text-white tracking-[0.36px]">
           <p className="leading-[1]">{month}</p>
         </div>
-        <div className="font-['Public_Sans:Bold',sans-serif] font-bold text-[44px] sm:text-[52px] md:text-[55px] text-white">
+        <div className="font-bold text-[44px] sm:text-[52px] md:text-[55px] text-white">
           <p className="leading-[1]">{day}</p>
         </div>
-        <div className="font-['Public_Sans:ExtraBold',sans-serif] font-extrabold text-[26px] sm:text-[32px] md:text-[38px] text-white tracking-[0.08px]">
+        <div className="font-extrabold text-[26px] sm:text-[32px] md:text-[38px] text-white tracking-[0.08px]">
           <p className="leading-[1.1]">{title}</p>
         </div>
         <div className="flex items-end justify-between gap-2 pt-1">
           <div className="flex flex-col">
-            <span className="font-['Public_Sans:Bold',sans-serif] font-bold text-[15px] sm:text-[18px] md:text-[20px] text-white leading-[2]">
+            <span className="font-bold text-[15px] sm:text-[18px] md:text-[20px] text-white leading-[2]">
               {time}
             </span>
-            <span className="font-['Public_Sans:Bold',sans-serif] font-bold text-[15px] sm:text-[18px] md:text-[20px] text-white leading-[2]">
+            <span className="font-bold text-[15px] sm:text-[18px] md:text-[20px] text-white leading-[2]">
               {location}
             </span>
           </div>
@@ -323,13 +323,13 @@ export default function Workshop() {
         >
           <motion.h1
             variants={fadeInUp}
-            className="font-['DM_Serif_Text:Regular',sans-serif] text-[38px] sm:text-[56px] md:text-[72px] lg:text-[80px] text-[#2e7e96] leading-tight mb-4 sm:mb-6"
+            className="font-pt-serif text-[38px] sm:text-[56px] md:text-[72px] lg:text-[80px] text-[#2e7e96] leading-tight mb-4 sm:mb-6"
           >
             Our Events
           </motion.h1>
           <motion.p
             variants={fadeInUp}
-            className="font-['Public_Sans:Regular',sans-serif] text-[14px] sm:text-[16px] md:text-[18px] lg:text-[20px] text-[#6d737a] leading-relaxed max-w-4xl mx-auto"
+            className="text-[14px] sm:text-[16px] md:text-[18px] lg:text-[20px] text-[#6d737a] leading-relaxed max-w-4xl mx-auto"
           >
             Our recent event was a great success, bringing together industry leaders and
             professionals to explore the latest trends and innovations. It featured keynote
@@ -379,7 +379,7 @@ export default function Workshop() {
             initial={{ opacity: 0, y: 50 }}
             animate={{ opacity: 1, y: 0 }}
             exit={{ opacity: 0, y: 50 }}
-            className="fixed bottom-4 right-4 z-50 bg-green-500 text-white px-6 py-3 rounded-lg shadow-xl font-['Public_Sans:Medium',sans-serif]"
+            className="fixed bottom-4 right-4 z-50 bg-green-500 text-white px-6 py-3 rounded-lg shadow-xl"
           >
             {registrationMessage}
           </motion.div>

@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
-import { motion } from 'framer-motion';
+import { m } from 'framer-motion';
 import {
   Calendar,
   Clock,
@@ -425,6 +425,7 @@ export default function EventEditor() {
 
       <Footer />
     </div>
+
   );
 }
 

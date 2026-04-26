@@ -1,23 +1,34 @@
-import { motion } from "motion/react";
+import { m } from "framer-motion";
 import { Link } from "react-router-dom";
 import { useState, useEffect } from "react";
 import { ArrowUpRightIcon } from "../ui/Icons";
 import { courseService } from "../../services/courseService";
+import { 
+  Palette, 
+  Code, 
+  TrendingUp, 
+  Briefcase, 
+  BarChart, 
+  Sparkles, 
+  Camera, 
+  Music, 
+  Bookmark 
+} from "lucide-react";
 
 
-// Map category name → Bootstrap icon class
+// Map category name → Lucide icon component
 const CATEGORY_ICONS = {
-  "Design": "bi-palette",
-  "Development": "bi-code-slash",
-  "Marketing": "bi-graph-up",
-  "Business": "bi-briefcase",
-  "Data Science": "bi-bar-chart",
-  "Lifestyle": "bi-stars",
-  "Photography": "bi-camera",
-  "Music": "bi-music-note",
+  "Design": Palette,
+  "Development": Code,
+  "Marketing": TrendingUp,
+  "Business": Briefcase,
+  "Data Science": BarChart,
+  "Lifestyle": Sparkles,
+  "Photography": Camera,
+  "Music": Music,
 };
 
-const DEFAULT_ICON = "bi-bookmark";
+const DEFAULT_ICON = Bookmark;
 
 export default function CategoriesSection({ title, subtitle }) {
   const [categories, setCategories] = useState([]);
@@ -48,7 +59,7 @@ export default function CategoriesSection({ title, subtitle }) {
   return (
     <section className="bg-white py-16 px-4 sm:px-6 lg:px-8" aria-labelledby="categories-heading">
       <div className="max-w-7xl mx-auto">
-        <motion.div
+        <m.div
           className="text-center mb-12"
           initial={{ opacity: 0, y: 20 }}
           whileInView={{ opacity: 1, y: 0 }}
@@ -61,7 +72,7 @@ export default function CategoriesSection({ title, subtitle }) {
           <p className="text-[18px] md:text-[20px] text-[#6d737a]">
             {subtitle || "Explore topics taught by world-class instructors."}
           </p>
-        </motion.div>
+        </m.div>
 
         {/* Loading skeletons */}
         {loading && (
@@ -81,9 +92,9 @@ export default function CategoriesSection({ title, subtitle }) {
         {!loading && !error && (
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
             {categories.map((category, index) => {
-              const icon = CATEGORY_ICONS[category.name] ?? DEFAULT_ICON;
+              const IconComponent = CATEGORY_ICONS[category.name] ?? DEFAULT_ICON;
               return (
-                <motion.div
+                <m.div
                   key={category._id}
                   initial={{ opacity: 0, y: 20 }}
                   whileInView={{ opacity: 1, y: 0 }}
@@ -94,7 +105,7 @@ export default function CategoriesSection({ title, subtitle }) {
                     to={`/courses?category=${encodeURIComponent(category.slug)}`}
                     aria-label={`Browse ${category.name} courses`}
                   >
-                    <motion.div
+                    <m.div
                       className="group w-full bg-white rounded-lg p-6 flex items-center justify-between cursor-pointer border border-transparent text-left"
                       initial={{
                         y: 0,
@@ -110,8 +121,8 @@ export default function CategoriesSection({ title, subtitle }) {
                     >
                       <div className="flex items-center gap-4 min-w-0">
                         <div className="flex-shrink-0 w-8 h-8 flex items-center justify-center">
-                          <i
-                            className={`${icon} text-2xl text-[#6d737a] transition-colors duration-100 group-hover:text-[#14627a]`}
+                          <IconComponent
+                            className="w-6 h-6 text-[#6d737a] transition-colors duration-100 group-hover:text-[#14627a]"
                             aria-hidden="true"
                           />
                         </div>
@@ -135,9 +146,9 @@ export default function CategoriesSection({ title, subtitle }) {
                       >
                         <ArrowUpRightIcon color="currentColor" />
                       </div>
-                    </motion.div>
+                    </m.div>
                   </Link>
-                </motion.div>
+                </m.div>
               );
             })}
           </div>

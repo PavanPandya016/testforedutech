@@ -1,6 +1,6 @@
 import { lazy, Suspense } from 'react';
 import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom';
-import "bootstrap-icons/font/bootstrap-icons.css";
+import { LazyMotion } from "framer-motion";
 
 // Components
 import ScrollToTop from './components/ScrollToTop.jsx';
@@ -29,33 +29,37 @@ const PageLoader = () => (
   </div>
 );
 
+const loadFeatures = () => import('./framerFeatures').then(res => res.default);
+
 export default function App() {
   return (
     <BrowserRouter>
       <ScrollToTop />
-      <Suspense fallback={<PageLoader />}>
-        <Routes>
-          <Route path="/" element={<Home />} />
-          <Route path="/about" element={<About />} />
-          <Route path="/courses" element={<Courses />} />
-          <Route path="/course/:id" element={<CourseDetail />} />
-          <Route path="/blog" element={<Blog />} />
-          <Route path="/blog/dashboard" element={<BlogDashboard />} />
-          <Route path="/blog/editor" element={<BlogEditor />} />
-          <Route path="/blog/editor/:id" element={<BlogEditor />} />
-          <Route path="/blog/:id" element={<BlogDetail />} />
-          <Route path="/workshop" element={<Workshop />} />
-          <Route path="/login" element={<Login />} />
-          <Route path="/signup" element={<Signup />} />
-          <Route path="/apply" element={<Apply />} />
-          <Route path="/admin" element={<AdminDashboard />} />
-          <Route path="/admin/events/new" element={<EventEditor />} />
-          <Route path="/admin/events/edit/:id" element={<EventEditor />} />
-          <Route path="/admin/courses/new" element={<CourseEditor />} />
-          <Route path="/admin/courses/edit/:id" element={<CourseEditor />} />
-          <Route path="*" element={<Navigate to="/" replace />} />
-        </Routes>
-      </Suspense>
+      <LazyMotion features={loadFeatures} strict>
+        <Suspense fallback={<PageLoader />}>
+          <Routes>
+            <Route path="/" element={<Home />} />
+            <Route path="/about" element={<About />} />
+            <Route path="/courses" element={<Courses />} />
+            <Route path="/course/:id" element={<CourseDetail />} />
+            <Route path="/blog" element={<Blog />} />
+            <Route path="/blog/dashboard" element={<BlogDashboard />} />
+            <Route path="/blog/editor" element={<BlogEditor />} />
+            <Route path="/blog/editor/:id" element={<BlogEditor />} />
+            <Route path="/blog/:id" element={<BlogDetail />} />
+            <Route path="/workshop" element={<Workshop />} />
+            <Route path="/login" element={<Login />} />
+            <Route path="/signup" element={<Signup />} />
+            <Route path="/apply" element={<Apply />} />
+            <Route path="/admin" element={<AdminDashboard />} />
+            <Route path="/admin/events/new" element={<EventEditor />} />
+            <Route path="/admin/events/edit/:id" element={<EventEditor />} />
+            <Route path="/admin/courses/new" element={<CourseEditor />} />
+            <Route path="/admin/courses/edit/:id" element={<CourseEditor />} />
+            <Route path="*" element={<Navigate to="/" replace />} />
+          </Routes>
+        </Suspense>
+      </LazyMotion>
     </BrowserRouter>
   );
 }

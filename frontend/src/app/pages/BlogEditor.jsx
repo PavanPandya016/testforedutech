@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
-import { motion } from 'framer-motion';
+import { m } from 'framer-motion';
 import { useEditor, EditorContent } from '@tiptap/react';
 import StarterKit from '@tiptap/starter-kit';
 import Image from '@tiptap/extension-image';
@@ -348,7 +348,11 @@ export default function BlogEditor() {
           </div>
 
           {/* Right Sidebar - Settings */}
-          <div className={`${showSettings ? 'block' : 'hidden'} md:block w-full md:w-80 space-y-6 md:sticky md:top-24`}>
+          <m.div 
+            className={`${showSettings ? 'block' : 'hidden'} md:block w-full md:w-80 space-y-6 md:sticky md:top-24`}
+            initial={{ opacity: 0, x: 20 }}
+            animate={{ opacity: 1, x: 0 }}
+          >
 
             {/* Table of Contents Preview */}
             <div className="bg-white p-5 rounded-xl border border-gray-200 shadow-sm">
@@ -470,7 +474,7 @@ export default function BlogEditor() {
               </div>
 
             </div>
-          </div>
+          </m.div>
 
         </div>
       </main>

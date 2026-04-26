@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { motion } from 'framer-motion';
+import { m } from 'framer-motion';
 import { Search, User, LayoutDashboard, PlusCircle, ArrowRight } from 'lucide-react';
 import { Link } from 'react-router-dom';
 import Header from '../components/ui/Header';
@@ -126,33 +126,33 @@ export default function Blog() {
       <Header />
 
       {/* hero */}
-      <motion.section
+      <m.section
         className="py-12 px-4 sm:px-6 lg:px-8"
         initial={{ opacity: 0 }}
         animate={{ opacity: 1 }}
         transition={{ duration: 0.6 }}
       >
         <div className="max-w-7xl mx-auto text-center">
-          <motion.h1
+          <m.h1
             className="text-4xl sm:text-5xl lg:text-6xl font-bold text-[#06213d] mb-4 sm:mb-6"
             initial={{ y: -20, opacity: 0 }}
             animate={{ y: 0, opacity: 1 }}
             transition={{ delay: 0.2, duration: 0.6 }}
           >
             Blog
-          </motion.h1>
-          <motion.p
+          </m.h1>
+          <m.p
             className="text-lg sm:text-xl text-[#6d737a] mb-6 sm:mb-8 max-w-2xl mx-auto px-4"
             initial={{ y: -20, opacity: 0 }}
             animate={{ y: 0, opacity: 1 }}
             transition={{ delay: 0.3, duration: 0.6 }}
           >
             A blog about tech, real‑world tasks, and the latest news.
-          </motion.p>
+          </m.p>
 
           {/* Create Blog & Dashboard Button for Authorized Users */}
           {hasPermission && (
-            <motion.div
+            <m.div
               initial={{ y: -20, opacity: 0 }}
               animate={{ y: 0, opacity: 1 }}
               transition={{ delay: 0.35, duration: 0.6 }}
@@ -165,11 +165,11 @@ export default function Blog() {
               >
                 <PlusCircle size={20} className="group-hover:scale-110 transition-transform" /> Create New Blog
               </Link>
-            </motion.div>
+            </m.div>
           )}
 
           {/* search, sort, and tag filters */}
-          <motion.div
+          <m.div
             className="max-w-4xl mx-auto mb-6 sm:mb-8"
             initial={{ y: -20, opacity: 0 }}
             animate={{ y: 0, opacity: 1 }}
@@ -209,17 +209,17 @@ export default function Blog() {
                 ))}
               </select>
             </div>
-          </motion.div>
+          </m.div>
 
           {/* category filter */}
-          <motion.div
+          <m.div
             className="flex flex-wrap justify-center gap-2 sm:gap-3 mb-8 sm:mb-12 px-4"
             initial={{ y: -20, opacity: 0 }}
             animate={{ y: 0, opacity: 1 }}
             transition={{ delay: 0.5, duration: 0.6 }}
           >
             {categories.map((category) => (
-              <motion.button
+              <m.button
                 key={category}
                 onClick={() => setSelectedCategory(category)}
                 className={`px-4 sm:px-6 py-2 sm:py-2.5 rounded-full text-xs sm:text-sm font-bold transition-all border-2 ${selectedCategory === category
@@ -230,15 +230,15 @@ export default function Blog() {
                 whileTap={{ scale: 0.95 }}
               >
                 {category}
-              </motion.button>
+              </m.button>
             ))}
-          </motion.div>
+          </m.div>
         </div>
-      </motion.section >
+      </m.section >
 
       {/* posts */}
       < section className="pb-12 sm:pb-16 lg:pb-20 px-4 sm:px-6 lg:px-8" >
-        <motion.div
+        <m.div
           className="max-w-7xl mx-auto"
           variants={containerVariants}
           initial="hidden"
@@ -262,14 +262,14 @@ export default function Blog() {
             <>
               <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 sm:gap-8">
                 {filteredPosts.map((post) => (
-                  <motion.article
+                  <m.article
                     key={post.id}
                     variants={itemVariants}
                     className="bg-white rounded-3xl overflow-hidden shadow-[0_8px_30px_rgb(0,0,0,0.04)] hover:shadow-[0_20px_50px_rgba(20,98,122,0.1)] transition-all duration-500 group border border-gray-50"
                     whileHover={{ y: -12 }}
                   >
                     <div className="relative h-48 sm:h-56 overflow-hidden">
-                      <motion.img
+                      <m.img
                         src={post.image}
                         alt={post.title}
                         className="w-full h-full object-cover"
@@ -277,12 +277,12 @@ export default function Blog() {
                         transition={{ duration: 0.3 }}
                       />
                       <div className="absolute inset-0 bg-gradient-to-t from-black/50 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300" />
-                      <motion.div
+                      <m.div
                         className={`absolute top-4 left-4 rounded-full px-3 py-1 text-xs font-medium text-white shadow-lg ${categoryColors[post.category]}`}
                         whileHover={{ scale: 1.1 }}
                       >
                         {post.category}
-                      </motion.div>
+                      </m.div>
                     </div>
 
                     <div className="p-4 sm:p-6">
@@ -319,12 +319,12 @@ export default function Blog() {
                         </Link>
                       </div>
                     </div>
-                  </motion.article>
+                  </m.article>
                 ))}
               </div>
 
               {filteredPosts.length === 0 && (
-                <motion.div
+                <m.div
                   className="text-center py-12 sm:py-16"
                   initial={{ opacity: 0 }}
                   animate={{ opacity: 1 }}
@@ -332,20 +332,20 @@ export default function Blog() {
                   <p className="text-lg sm:text-xl text-[#6d737a]">
                     No blog posts found matching your criteria.
                   </p>
-                </motion.div>
+                </m.div>
               )}
             </>
           )}
 
           {/* New Suggestion Feature */}
-          <motion.div
+          <m.div
             initial={{ opacity: 0, y: 40 }}
             whileInView={{ opacity: 1, y: 0 }}
             viewport={{ once: true }}
             transition={{ duration: 0.8 }}
           >
-          </motion.div>
-        </motion.div>
+          </m.div>
+        </m.div>
       </section >
 
       <Footer />

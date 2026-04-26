@@ -1,5 +1,5 @@
-import { useState, useEffect } from 'react';
-import { motion } from 'framer-motion';
+import React, { useState, useEffect } from 'react';
+import { m } from 'framer-motion';
 import { Link, useNavigate } from 'react-router-dom';
 import { Edit, Trash2, Plus, Eye, Heart, BarChart2 } from 'lucide-react';
 import Header from '../components/ui/Header';
@@ -91,13 +91,13 @@ export default function BlogDashboard() {
         </div>
 
         {/* Analytics Summary */}
-        <motion.div
+        <m.div
           variants={containerVariants}
           initial="hidden"
           animate="visible"
           className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-12"
         >
-          <motion.div variants={itemVariants} className="bg-white rounded-xl shadow-sm border border-gray-100 p-6 flex items-center gap-4">
+          <m.div variants={itemVariants} className="bg-white rounded-xl shadow-sm border border-gray-100 p-6 flex items-center gap-4">
             <div className="bg-[#14627a]/10 p-4 rounded-lg text-[#14627a]">
               <BarChart2 className="w-8 h-8" />
             </div>
@@ -105,12 +105,12 @@ export default function BlogDashboard() {
               <p className="text-sm text-gray-500">Total Posts</p>
               <p className="text-2xl font-bold text-gray-900">{isLoading ? '—' : blogs.length}</p>
             </div>
-          </motion.div>
+          </m.div>
 
 
 
 
-        </motion.div>
+        </m.div>
 
         {/* Blog Posts List */}
         <div className="bg-white rounded-xl shadow-sm border border-gray-100 overflow-hidden">
@@ -157,7 +157,7 @@ export default function BlogDashboard() {
                   {blogs.map((blog) => {
                     const blogId = blog._id || blog.id;
                     return (
-                      <motion.tr
+                      <m.tr
                         key={blogId}
                         initial={{ opacity: 0 }}
                         animate={{ opacity: 1 }}
@@ -225,7 +225,7 @@ export default function BlogDashboard() {
                             )}
                           </div>
                         </td>
-                      </motion.tr>
+                      </m.tr>
                     );
                   })}
                 </tbody>
@@ -237,5 +237,6 @@ export default function BlogDashboard() {
 
       <Footer />
     </div>
+
   );
 }

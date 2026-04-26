@@ -3,6 +3,7 @@ import { useState, useEffect } from "react";
 import svgPaths from "../../../imports/svg-go1x4xx39u";
 
 import { courseService } from "../../services/courseService";
+import { Phone, MapPin, Mail } from "lucide-react";
 
 // ─────────────────────────────────────────────
 
@@ -20,11 +21,12 @@ function SocialMediaLogo() {
   );
 }
 
-function SocialMediaCard({ children }) {
+function SocialMediaCard({ children, label }) {
   return (
     <button
       className="bg-[#9fc3ce] content-stretch flex flex-col items-center justify-center p-[14px] relative rounded-[8px] hover:bg-[#8fb3be] transition-colors"
       data-name="Social Media card"
+      aria-label={label}
     >
       {children}
     </button>
@@ -35,11 +37,11 @@ function SocialMediaLogo1() {
   return (
     <div className="relative shrink-0 size-[20px]" data-name="Social Media logo">
       <svg className="block size-full" fill="none" preserveAspectRatio="none" viewBox="0 0 20 20">
-        <g clipPath="url(#clip0_1_3333)" id="Social Media logo">
-          <path d={svgPaths.p2cd2c200} fill="var(--fill-0, #2E7E96)" id="Vector" />
+        <g clipPath="url(#clip_insta)" id="Social Media logo insta">
+          <path d={svgPaths.p2cd2c200} fill="var(--fill-0, #2E7E96)" id="Vector_insta" />
         </g>
         <defs>
-          <clipPath id="clip0_1_3333">
+          <clipPath id="clip_insta">
             <rect fill="white" height="20" width="20" />
           </clipPath>
         </defs>
@@ -52,11 +54,11 @@ function SocialMediaLogo2() {
   return (
     <div className="relative shrink-0 size-[20px]" data-name="Social Media logo">
       <svg className="block size-full" fill="none" preserveAspectRatio="none" viewBox="0 0 20 20">
-        <g clipPath="url(#clip0_1_3342)" id="Social Media logo">
-          <path d={svgPaths.p4926900} fill="var(--fill-0, #2E7E96)" id="Vector" />
+        <g clipPath="url(#clip_twitter)" id="Social Media logo twitter">
+          <path d={svgPaths.p4926900} fill="var(--fill-0, #2E7E96)" id="Vector_twitter" />
         </g>
         <defs>
-          <clipPath id="clip0_1_3342">
+          <clipPath id="clip_twitter">
             <rect fill="white" height="20" width="20" />
           </clipPath>
         </defs>
@@ -96,11 +98,11 @@ function CategorySection() {
   }, []);
 
   const linkClass =
-    "block font-['Public_Sans:Regular',sans-serif] font-normal text-[#6d737a] text-[14px] md:text-[16px] leading-[24px] hover:text-[#14627a] transition";
+    "block font-normal text-[#6d737a] text-[14px] md:text-[16px] leading-[24px] hover:text-[#14627a] transition";
 
   return (
     <div className="space-y-4">
-      <div className="font-['Public_Sans:SemiBold',sans-serif] font-semibold text-[#1b1d1f] text-[20px] md:text-[24px] tracking-[0.048px]">
+      <div className="font-semibold text-[#1b1d1f] text-[20px] md:text-[24px] tracking-[0.048px]">
         <p className="leading-[32px]">Category</p>
       </div>
 
@@ -162,7 +164,7 @@ export default function Footer({ settings }) {
             <div className="space-y-2">
               {settings?.phone && (
                 <a href={`tel:${settings.phone}`} className="flex items-center gap-2 text-sm md:text-base text-[#6d737a] hover:text-[#14627a] transition">
-                  <i className="bi bi-telephone text-lg"></i>
+                  <Phone className="w-5 h-5 text-[#14627a]" />
                   <span>{settings.phone}</span>
                 </a>
               )}
@@ -171,25 +173,25 @@ export default function Footer({ settings }) {
                 <a
                   href={`https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(settings.address)}`}
                   target="_blank"
-                  rel="noreferrer"
-                  className="font-['Public_Sans',sans-serif] text-[#6d737a] text-sm md:text-base leading-[24px] flex items-start gap-2 hover:text-[#14627a] transition"
+                  rel="noopener noreferrer"
+                  className="text-[#6d737a] text-sm md:text-base leading-[24px] flex items-start gap-2 hover:text-[#14627a] transition"
                 >
-                  <i className="bi bi-house text-[#14627a] text-lg mt-[2px]"></i>
+                  <MapPin className="w-5 h-5 text-[#14627a] mt-[2px]" />
                   <span>{settings.address}</span>
                 </a>
               )}
 
               {settings?.email && (
                 <a href={`mailto:${settings.email}`} className="flex items-center gap-2 text-sm md:text-base text-[#363a3d] hover:text-[#14627a] transition">
-                  <i className="bi bi-envelope-at text-[#14627a] text-lg"></i>
+                  <Mail className="w-5 h-5 text-[#14627a]" />
                   <span>{settings.email}</span>
                 </a>
               )}
             </div>
             <div className="flex gap-4 mt-4">
-              <SocialMediaCard><SocialMediaLogo /></SocialMediaCard>
-              <SocialMediaCard><SocialMediaLogo1 /></SocialMediaCard>
-              <SocialMediaCard><SocialMediaLogo2 /></SocialMediaCard>
+              <SocialMediaCard label="Follow us on Facebook"><SocialMediaLogo /></SocialMediaCard>
+              <SocialMediaCard label="Follow us on Instagram"><SocialMediaLogo1 /></SocialMediaCard>
+              <SocialMediaCard label="Follow us on Twitter"><SocialMediaLogo2 /></SocialMediaCard>
             </div>
             <p className="text-[#6d737a] text-xs pt-4">
               © {currentYear} eduTech. All rights reserved.
@@ -232,12 +234,16 @@ export default function Footer({ settings }) {
               Enter your email address to get in touch soon with us.
             </p>
             <div className="space-y-4">
+              <label htmlFor="footer-email" className="sr-only">Email address</label>
               <input
+                id="footer-email"
                 type="email"
                 placeholder="Email here"
                 className="bg-[rgba(231,233,235,0.5)] w-full p-[16px] rounded-[8px] font-['Public_Sans:Regular',sans-serif] font-normal text-[#6d737a] text-[14px] md:text-[16px] leading-[24px] outline-none focus:ring-2 focus:ring-[#14627a]"
               />
+              <label htmlFor="footer-message" className="sr-only">Message</label>
               <input
+                id="footer-message"
                 type="text"
                 placeholder="Message here"
                 className="bg-[rgba(231,233,235,0.5)] w-full p-[16px] rounded-[8px] font-['Public_Sans:Regular',sans-serif] font-normal text-[#6d737a] text-[14px] md:text-[16px] leading-[24px] outline-none focus:ring-2 focus:ring-[#14627a]"
