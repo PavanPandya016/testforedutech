@@ -1,22 +1,30 @@
 /**
  * Optimizes Cloudinary URLs by injecting transformation parameters.
- * Also proxies the image through the site's own domain (/cdn/...) to
- * prevent Cloudinary from setting 3rd-party analytics cookies — which
- * would otherwise fail the Lighthouse Best Practices audit.
  *
- * The /cdn rewrite in vercel.json forwards the request to:
- *   https://res.cloudinary.com/djl22ie5b/:path*
+ * On production (Vercel), images are proxied through /cdn/:path* so
+ * Cloudinary cannot set 3rd-party analytics cookies on your users.
+ * The /cdn rewrite in vercel.json forwards:
+ *   /cdn/:path*  →  https://res.cloudinary.com/djl22ie5b/:path*
+ *
+ * On localhost (dev/preview) the proxy isn't available, so the original
+ * Cloudinary URL is used directly — images load normally in development.
  *
  * @param {string} url   - Original Cloudinary image URL
  * @param {object} opts
  * @param {number} [opts.width]  - Target width in pixels
  * @param {number} [opts.height] - Target height in pixels
  * @param {string} [opts.crop]   - Crop mode (default: 'fill')
- * @returns {string} Optimized, proxied URL
+ * @returns {string} Optimized URL (proxied on production, direct on dev)
  */
 
-// Your Cloudinary cloud name — update here if it ever changes
 const CLOUD_ORIGIN = 'https://res.cloudinary.com/djl22ie5b';
+
+// Only proxy through /cdn on actual Vercel deployment (not localhost/preview)
+const isProduction =
+  typeof window !== 'undefined' &&
+  window.location.hostname !== 'localhost' &&
+  window.location.hostname !== '127.0.0.1' &&
+  !window.location.hostname.startsWith('192.168.');
 
 export const getOptimizedImage = (url, { width, height, crop = 'fill' } = {}) => {
   if (!url || typeof url !== 'string') return url;
@@ -34,10 +42,10 @@ export const getOptimizedImage = (url, { width, height, crop = 'fill' } = {}) =>
   let optimizedUrl;
 
   if (alreadyTransformed) {
-    // URL already has transforms — just proxy the domain
+    // Already has transforms — keep as-is, just maybe proxy
     optimizedUrl = url;
   } else {
-    const base = url.slice(0, uploadIndex + 8); // everything up to and including /upload/
+    const base = url.slice(0, uploadIndex + 8); // everything up to /upload/
 
     const transformations = [
       width  ? `w_${width}`  : '',
@@ -51,9 +59,11 @@ export const getOptimizedImage = (url, { width, height, crop = 'fill' } = {}) =>
     optimizedUrl = `${base}${transformations}/${afterUpload}`;
   }
 
-  // ── Proxy through own domain to eliminate 3rd-party cookies ──────────────
-  // Replaces:  https://res.cloudinary.com/djl22ie5b/image/upload/...
-  // With:      /cdn/image/upload/...
-  // Vercel forwards /cdn/:path* → https://res.cloudinary.com/djl22ie5b/:path*
-  return optimizedUrl.replace(CLOUD_ORIGIN, '/cdn');
+  // Proxy through own domain on production to eliminate 3rd-party cookies.
+  // Skipped on localhost so images load normally during development.
+  if (isProduction) {
+    return optimizedUrl.replace(CLOUD_ORIGIN, '/cdn');
+  }
+
+  return optimizedUrl;
 };
