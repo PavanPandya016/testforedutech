@@ -29,9 +29,19 @@ export default defineConfig({
 
   build: {
     outDir: 'dist',
-    target: 'esnext',      // Modern JS — smaller output, faster parse
-    sourcemap: false,       // Never ship sourcemaps to production
-    minify: 'esbuild',
+    target: 'esnext',
+    sourcemap: false,
+    minify: 'terser',
+    terserOptions: {
+      compress: {
+        drop_console: true,
+        drop_debugger: true,
+        pure_funcs: ['console.log', 'console.info', 'console.warn'],
+        passes: 2,
+      },
+      mangle: true,
+      format: { comments: false },
+    },
     chunkSizeWarningLimit: 600,
     rollupOptions: {
       output: {

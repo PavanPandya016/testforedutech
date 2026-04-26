@@ -154,7 +154,7 @@ export default function Footer({ settings }) {
             <div className="mb-6 text-left">
               <p className="text-[36px] sm:text-[42px] md:text-[48px] font-bold italic font-['PT_Serif',serif] leading-tight">
                 <span className="text-[#14627a]">edu</span>
-                <span className="text-[#ffc27a]">Tech</span>
+                <span className="text-[#b35a00]">Tech</span>
               </p>
             </div>
 

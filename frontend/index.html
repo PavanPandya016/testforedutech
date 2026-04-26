@@ -4,6 +4,7 @@
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <meta name="theme-color" content="#14627a" />
+    <meta name="robots" content="index, follow" />
     <meta name="description" content="eduTech - A premium educational platform offering 200+ expert-led courses, workshops, and events for lifelong learners." />
 
     <!-- Open Graph -->
@@ -20,20 +21,38 @@
 
     <title>eduTech | Modern Learning Platform</title>
 
-    <!-- Preconnect to Font Services -->
+    <!-- Preconnect to 3rd party origins used at render time -->
     <link rel="preconnect" href="https://fonts.googleapis.com" />
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
     <link rel="preconnect" href="https://res.cloudinary.com" />
 
-    <!-- Optimized Non-blocking Google Fonts -->
-    <link rel="preload" as="style" href="https://fonts.googleapis.com/css2?family=PT+Serif:ital,wght@0,400;0,700;1,400&family=Outfit:wght@400;600;700&display=swap" />
-    <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=PT+Serif:ital,wght@0,400;0,700;1,400&family=Outfit:wght@400;600;700&display=swap" media="print" onload="this.media='all'" />
+    <!--
+      Non-blocking Google Fonts:
+      media="print" means the browser fetches but does not block render.
+      onload switches to media="all" so fonts apply once downloaded.
+    -->
+    <link
+      rel="stylesheet"
+      href="https://fonts.googleapis.com/css2?family=PT+Serif:ital,wght@0,400;0,700;1,400&family=Outfit:wght@400;600;700&display=optional"
+      media="print"
+      onload="this.media='all'"
+    />
     <noscript>
-      <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=PT+Serif:ital,wght@0,400;0,700;1,400&family=Outfit:wght@400;600;700&display=swap" />
+      <link
+        rel="stylesheet"
+        href="https://fonts.googleapis.com/css2?family=PT+Serif:ital,wght@0,400;0,700;1,400&family=Outfit:wght@400;600;700&display=optional"
+      />
     </noscript>
   </head>
 
   <body>
+    <!-- Skip navigation for keyboard/screen reader accessibility -->
+    <a
+      href="#main-content"
+      style="position:absolute;left:-9999px;top:auto;width:1px;height:1px;overflow:hidden;z-index:9999"
+      onfocus="this.style.cssText='position:fixed;left:1rem;top:1rem;width:auto;height:auto;overflow:visible;z-index:9999;background:#14627a;color:#fff;padding:0.5rem 1rem;border-radius:0.5rem;font-weight:600;text-decoration:none'"
+      onblur="this.style.cssText='position:absolute;left:-9999px;top:auto;width:1px;height:1px;overflow:hidden;z-index:9999'"
+    >Skip to main content</a>
     <div id="root"></div>
     <script type="module" src="/src/main.tsx"></script>
   </body>

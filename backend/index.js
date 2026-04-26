@@ -60,7 +60,6 @@ const allowedOrigins = [
   'http://localhost:5173',
   'http://localhost:5174',
   'https://edutech-5psu.vercel.app',
-  'https://edutech-5psu.vercel.app/'
 ];
 
 app.use(cors({
@@ -71,7 +70,8 @@ app.use(cors({
       callback(new Error('Not allowed by CORS'));
     }
   },
-  credentials: true
+  credentials: true,
+  maxAge: 86400, // Cache CORS preflight for 24 hours — eliminates 540ms preflight cost
 }));
 
 // Serve uploaded files

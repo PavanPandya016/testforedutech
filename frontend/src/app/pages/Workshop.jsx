@@ -1,4 +1,5 @@
 import React, { useState } from 'react';
+import { Helmet } from 'react-helmet-async';
 import { motion, AnimatePresence } from 'framer-motion';
 import Header from '../components/ui/Header';
 import Footer from '../components/ui/Footer';
@@ -309,7 +310,15 @@ export default function Workshop() {
   const pastCount = events.filter(e => e.type === 'past').length;
 
   return (
-    <div className="bg-white flex flex-col min-h-screen overflow-x-hidden">
+    <div id="main-content" className="bg-white flex flex-col min-h-screen overflow-x-hidden">
+      <Helmet>
+        <title>Workshops &amp; Events | eduTech – Live Learning Sessions</title>
+        <meta name="description" content="Join eduTech's live workshops and events. Learn from industry experts in real-time interactive sessions on programming, design, and more." />
+        <meta property="og:title" content="Workshops &amp; Events | eduTech" />
+        <meta property="og:description" content="Live workshops and events from industry experts. Register today." />
+        <meta property="og:type" content="website" />
+        <link rel="canonical" href="https://edutech-5psu.vercel.app/workshop" />
+      </Helmet>
       <Header />
 
       {/* ── Hero Section ── */}

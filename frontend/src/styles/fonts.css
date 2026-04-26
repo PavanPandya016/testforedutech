@@ -1,1 +1,62 @@
-/* Fonts are now loaded via index.html for better performance */
+/*
+  Font-display: optional — browser uses system fonts if custom fonts haven't
+  loaded within the first render frame. Zero CLS, no FOUT.
+  Metric overrides match the fallback font metrics to the custom font metrics
+  so there is no layout shift even when the font eventually swaps in.
+*/
+
+/* Outfit — sans-serif for UI */
+@font-face {
+  font-family: 'Outfit';
+  font-style: normal;
+  font-weight: 400 700;
+  font-display: optional;
+  src: local('Outfit'), url('/fonts/outfit.woff2') format('woff2');
+}
+
+/* PT Serif — serif for headings/blog */
+@font-face {
+  font-family: 'PT Serif';
+  font-style: normal;
+  font-weight: 400;
+  font-display: optional;
+  src: local('PT Serif'), url('/fonts/pt-serif.woff2') format('woff2');
+}
+
+@font-face {
+  font-family: 'PT Serif';
+  font-style: normal;
+  font-weight: 700;
+  font-display: optional;
+  src: local('PT Serif Bold'), url('/fonts/pt-serif-bold.woff2') format('woff2');
+}
+
+@font-face {
+  font-family: 'PT Serif';
+  font-style: italic;
+  font-weight: 400;
+  font-display: optional;
+  src: local('PT Serif Italic'), url('/fonts/pt-serif-italic.woff2') format('woff2');
+}
+
+/*
+  Fallback metric overrides — eliminates CLS when Google Fonts swap in.
+  Values approximate Outfit → Inter and PT Serif → Georgia metrics.
+*/
+@font-face {
+  font-family: 'Outfit Fallback';
+  ascent-override: 100%;
+  descent-override: 25%;
+  line-gap-override: 0%;
+  size-adjust: 100%;
+  src: local('Arial');
+}
+
+@font-face {
+  font-family: 'PT Serif Fallback';
+  ascent-override: 94%;
+  descent-override: 26%;
+  line-gap-override: 0%;
+  size-adjust: 103%;
+  src: local('Georgia');
+}

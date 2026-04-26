@@ -1,9 +1,9 @@
 import React, { useState, useMemo, useCallback, useEffect } from 'react';
+import { Helmet } from 'react-helmet-async';
 import { Link, useSearchParams } from 'react-router-dom';
 import { motion, AnimatePresence } from 'framer-motion';
 import Header from '../components/ui/Header';
 import Footer from '../components/ui/Footer';
-
 import courseService from '../services/courseService';
 
 // ---------- Improved Presentational Helpers ----------
@@ -21,6 +21,10 @@ function CourseCard({ course }) {
         <img
           src={course.image}
           alt={course.title}
+          width="400"
+          height="192"
+          loading="lazy"
+          decoding="async"
           className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-110"
         />
         <div className="absolute top-4 left-4">
@@ -346,9 +350,17 @@ export default function Courses() {
 
   return (
     <div className="bg-[#fcfdfe] min-h-screen font-sans">
+      <Helmet>
+        <title>Courses | eduTech – 200+ Expert-Led Courses</title>
+        <meta name="description" content="Browse 200+ expert-led courses on programming, design, data science and more. Filter by level, category and price to find your perfect course." />
+        <meta property="og:title" content="Courses | eduTech" />
+        <meta property="og:description" content="Browse 200+ expert-led courses. Filter by level and category." />
+        <meta property="og:type" content="website" />
+        <link rel="canonical" href="https://edutech-5psu.vercel.app/courses" />
+      </Helmet>
       <Header />
 
-      <main className="max-w-[1400px] mx-auto px-6 lg:px-12 py-12 lg:py-20">
+      <main id="main-content" className="max-w-[1400px] mx-auto px-6 lg:px-12 py-12 lg:py-20">
         <header className="mb-16">
           <motion.div initial={{ opacity: 0, x: -20 }} animate={{ opacity: 1, x: 0 }}>
             <h1 className="text-4xl lg:text-6xl font-black text-[#06213d] tracking-tighter mb-4">

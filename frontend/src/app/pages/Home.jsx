@@ -1,20 +1,16 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, lazy, Suspense } from "react";
 import { Helmet } from 'react-helmet-async';
 
 import Header from "../components/ui/Header";
-const Footer = lazy(() => import("../components/ui/Footer"));
-
-// Sections
 import HeroSection from "../components/home/HeroSection";
-import { lazy, Suspense } from "react";
-
-const PopularCoursesSection = lazy(() => import("../components/home/PopularCoursesSection"));
-const CategoriesSection = lazy(() => import("../components/home/CategoriesSection"));
-const InstructorsSection = lazy(() => import("../components/home/InstructorsSection"));
-const CtaSection = lazy(() => import("../components/home/CtaSection"));
 import { api } from "../services/api/api";
 
-
+// Below-fold sections lazy loaded — only parsed after initial render
+const PopularCoursesSection = lazy(() => import("../components/home/PopularCoursesSection"));
+const CategoriesSection     = lazy(() => import("../components/home/CategoriesSection"));
+const InstructorsSection    = lazy(() => import("../components/home/InstructorsSection"));
+const CtaSection            = lazy(() => import("../components/home/CtaSection"));
+const Footer                = lazy(() => import("../components/ui/Footer"));
 
 // ─── Home Page ────────────────────────────────────────────────────────────────
 
@@ -34,10 +30,19 @@ export default function Home() {
         setInstructors(data.instructors || []);
         setStats(data.stats || { users: 0, courses: 0, instructors: 0 });
       } catch (err) {
-        console.error("Home fetch error:", err);
+        // Silent fail — UI degrades gracefully
       }
     };
-    fetchData();
+
+    // Defer API call until browser is idle so it doesn't block first paint
+    // Falls back to setTimeout(fn, 1) in browsers without requestIdleCallback
+    if ('requestIdleCallback' in window) {
+      const id = requestIdleCallback(fetchData, { timeout: 2000 });
+      return () => cancelIdleCallback(id);
+    } else {
+      const id = setTimeout(fetchData, 0);
+      return () => clearTimeout(id);
+    }
   }, []);
 
   return (
@@ -52,7 +57,7 @@ export default function Home() {
         <link rel="canonical" href="https://edutech-5psu.vercel.app/" />
       </Helmet>
       <Header />
-      <main>
+      <main id="main-content">
         <HeroSection
           images={settings?.heroImages}
           stats={stats}
