@@ -1,0 +1,12 @@
+User-agent: *
+Allow: /
+
+Disallow: /admin
+Disallow: /admin/
+Disallow: /blog/editor
+Disallow: /blog/dashboard
+Disallow: /apply
+Disallow: /login
+Disallow: /signup
+
+Sitemap: https://edutech-5psu.vercel.app/sitemap.xml

@@ -4,7 +4,8 @@ const { protect, admin } = require('../middleware/auth');
 const { 
   getStats, getPublicStats, getUsers, updateUser, deleteUser, getEntities, 
   deleteEntity, updateEntity, getEntityById, createEntity,
-  getEventParticipants, createUser, getApplications, updateApplicationStatus
+  getEventParticipants, createUser, getApplications, updateApplicationStatus,
+  getHomeData
 } = require('../controllers/adminController');
 const { cacheMiddleware } = require('../middleware/cacheMiddleware');
 
@@ -15,6 +16,8 @@ router.use((req, res, next) => {
 });
 
 router.get('/public-stats', cacheMiddleware(300), getPublicStats);
+// Combined home data: settings + featured courses + instructors + stats in one call
+router.get('/home-data', cacheMiddleware(120), getHomeData);
 
 router.use(protect);
 router.use(admin);

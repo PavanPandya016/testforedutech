@@ -1,10 +1,12 @@
 import { useState, useEffect } from 'react';
+import { Helmet } from 'react-helmet-async';
 import { m } from 'framer-motion';
-import { Search, User, LayoutDashboard, PlusCircle, ArrowRight } from 'lucide-react';
+import { Search, PlusCircle, ArrowRight } from 'lucide-react';
 import { Link } from 'react-router-dom';
 import Header from '../components/ui/Header';
 import Footer from '../components/ui/Footer';
-import blogService from '../services/blogService';
+import { api } from '../services/api/api';
+import { getOptimizedImage } from '../utils/imageOptimizer';
 
 const categoryColors = {
   Development: 'bg-[#14627a]',
@@ -32,26 +34,43 @@ export default function Blog() {
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState(null);
 
+  // Helper to normalize a backend post into the shape the UI expects
+  const normalizePost = (post) => {
+    const authorObj = post.author || {};
+    const authorName = authorObj.firstName
+      ? `${authorObj.firstName} ${authorObj.lastName || ''}`.trim()
+      : (typeof authorObj === 'string' ? authorObj : 'EduTech');
+    const categoryName = post.category?.name || post.category || 'General';
+    const htmlContent = post.content || '';
+    const words = htmlContent.replace(/<[^>]*>?/gm, '').split(/\s+/).filter(Boolean).length;
+    return {
+      ...post,
+      id: post._id || post.id,
+      image: post.featuredImage || 'https://images.unsplash.com/photo-1516321318423-f06f85e504b3?w=600',
+      author: authorName,
+      date: post.publishedAt
+        ? new Date(post.publishedAt).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })
+        : 'Recent',
+      readTime: `${Math.max(1, Math.ceil(words / 200))} min read`,
+      category: categoryName,
+      tags: (post.tags || []).map(t => (typeof t === 'object' ? t.name : t)),
+      excerpt: post.excerpt || '',
+      slug: post.slug || post._id,
+    };
+  };
+
   useEffect(() => {
     const fetchData = async () => {
       setIsLoading(true);
       setError(null);
       try {
-        // Load all blogs from service
-        const allBlogs = await blogService.getAllBlogs();
+        // Single combined endpoint — no double round-trip
+        const data = await api.get('/blog/feed');
+        const allBlogs = (data.posts || []).map(normalizePost);
         setBlogPosts(allBlogs);
-
-        // Load categories from service
-        const blogCategories = await blogService.getCategories();
-        setCategories(['All', ...blogCategories]);
-
-        // Extract unique tags
+        setCategories(['All', ...(data.categories || [])]);
         const tagsSet = new Set();
-        allBlogs.forEach(blog => {
-          if (Array.isArray(blog.tags)) {
-            blog.tags.forEach(tag => tagsSet.add(tag));
-          }
-        });
+        allBlogs.forEach(blog => (blog.tags || []).forEach(tag => tagsSet.add(tag)));
         setAvailableTags(Array.from(tagsSet));
       } catch (err) {
         console.error('Error fetching blog data:', err);
@@ -60,7 +79,6 @@ export default function Blog() {
         setIsLoading(false);
       }
     };
-
     fetchData();
   }, []);
 
@@ -123,6 +141,14 @@ export default function Blog() {
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-[#f4f8fb] to-[#e8f2f8]">
+      <Helmet>
+        <title>Blog | eduTech – Tech Articles &amp; Tutorials</title>
+        <meta name="description" content="Read the latest tech articles, tutorials, and insights from eduTech's expert instructors and community contributors." />
+        <meta property="og:title" content="Blog | eduTech" />
+        <meta property="og:description" content="Tech articles, tutorials and insights from expert instructors." />
+        <meta property="og:type" content="website" />
+        <link rel="canonical" href="https://edutech-5psu.vercel.app/blog" />
+      </Helmet>
       <Header />
 
       {/* hero */}
@@ -139,7 +165,7 @@ export default function Blog() {
             animate={{ y: 0, opacity: 1 }}
             transition={{ delay: 0.2, duration: 0.6 }}
           >
-            Blog
+            Blog – Tech Articles &amp; Tutorials
           </m.h1>
           <m.p
             className="text-lg sm:text-xl text-[#6d737a] mb-6 sm:mb-8 max-w-2xl mx-auto px-4"
@@ -270,8 +296,12 @@ export default function Blog() {
                   >
                     <div className="relative h-48 sm:h-56 overflow-hidden">
                       <m.img
-                        src={post.image}
+                        src={getOptimizedImage(post.image, { width: 600, height: 320 })}
                         alt={post.title}
+                        width="600"
+                        height="320"
+                        loading="lazy"
+                        decoding="async"
                         className="w-full h-full object-cover"
                         whileHover={{ scale: 1.1 }}
                         transition={{ duration: 0.3 }}

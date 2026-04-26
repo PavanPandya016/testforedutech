@@ -1,4 +1,5 @@
 import { useState, useEffect } from "react";
+import { Helmet } from 'react-helmet-async';
 
 import Header from "../components/ui/Header";
 const Footer = lazy(() => import("../components/ui/Footer"));
@@ -11,9 +12,7 @@ const PopularCoursesSection = lazy(() => import("../components/home/PopularCours
 const CategoriesSection = lazy(() => import("../components/home/CategoriesSection"));
 const InstructorsSection = lazy(() => import("../components/home/InstructorsSection"));
 const CtaSection = lazy(() => import("../components/home/CtaSection"));
-import adminService from "../services/adminService";
-import courseService from "../services/courseService";
-import instructorService from "../services/instructorService";
+import { api } from "../services/api/api";
 
 
 
@@ -28,36 +27,12 @@ export default function Home() {
   useEffect(() => {
     const fetchData = async () => {
       try {
-        const results = await Promise.allSettled([
-          adminService.getSiteSettings(),
-          courseService.getFeaturedCourses(),
-          instructorService.getInstructors(),
-          adminService.getPublicStats()
-        ]);
-
-        // Handle Site Settings
-        if (results[0].status === 'fulfilled') {
-          setSettings(results[0].value || null);
-        }
-
-        // Handle Featured Courses
-        if (results[1].status === 'fulfilled') {
-          setFeaturedCourses(results[1].value || []);
-        }
-
-        // Handle Instructors
-        if (results[2].status === 'fulfilled') {
-          setInstructors(results[2].value || []);
-        }
-
-        // Handle Stats
-        if (results[3].status === 'fulfilled') {
-          const statsData = results[3].value;
-          setStats(statsData?.stats || { users: 0, courses: 0, instructors: 0 });
-        } else {
-          console.warn("Stats fetch failed, using default values.");
-        }
-
+        // Single combined endpoint — replaces 4 separate API calls
+        const data = await api.get('/admin/home-data');
+        setSettings(data.settings || null);
+        setFeaturedCourses(data.featuredCourses || []);
+        setInstructors(data.instructors || []);
+        setStats(data.stats || { users: 0, courses: 0, instructors: 0 });
       } catch (err) {
         console.error("Home fetch error:", err);
       }
@@ -67,6 +42,15 @@ export default function Home() {
 
   return (
     <div className="bg-white flex flex-col min-h-screen overflow-hidden font-outfit">
+      <Helmet>
+        <title>eduTech | Modern Learning Platform – 200+ Courses</title>
+        <meta name="description" content="Access 200+ expert-led courses, workshops and events on eduTech. Learn programming, design, data science and more at your own pace." />
+        <meta property="og:title" content="eduTech | Modern Learning Platform" />
+        <meta property="og:description" content="200+ courses from expert instructors. Start learning today." />
+        <meta property="og:type" content="website" />
+        <meta name="twitter:card" content="summary_large_image" />
+        <link rel="canonical" href="https://edutech-5psu.vercel.app/" />
+      </Helmet>
       <Header />
       <main>
         <HeroSection

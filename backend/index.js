@@ -31,6 +31,24 @@ app.use(helmet({
 }));
 app.use(helmet.crossOriginResourcePolicy({ policy: "cross-origin" })); // Allow serving assets across domains
 app.use(compression());
+
+// Set Cache-Control headers on public GET API responses
+// This tells Vercel's CDN edge to cache the response for 60s
+app.use((req, res, next) => {
+  if (req.method === 'GET' && req.path.startsWith('/api/')) {
+    const PUBLIC_PATHS = [
+      '/courses', '/blog', '/events',
+      '/settings', '/public-stats', '/home-data', '/categories',
+      '/instructors', '/feed'
+    ];
+    const isPublic = PUBLIC_PATHS.some(p => req.path.includes(p));
+    if (isPublic) {
+      res.set('Cache-Control', 'public, s-maxage=60, stale-while-revalidate=300');
+    }
+  }
+  next();
+});
+
 if (process.env.NODE_ENV === 'development') {
   app.use(morgan('dev'));
 } else {
@@ -85,7 +103,12 @@ app.post('/api/upload', upload.single('file'), async (req, res) => {
     const b64 = Buffer.from(req.file.buffer).toString('base64');
     let dataURI = "data:" + req.file.mimetype + ";base64," + b64;
     const result = await cloudinary.uploader.upload(dataURI, {
-      folder: 'edutech_uploads' // Customize folder name in Cloudinary
+      folder: 'edutech_uploads',
+      // Store pre-optimized: auto format (WebP/AVIF) + auto quality + max width 1200px
+      transformation: [
+        { quality: 'auto', fetch_format: 'auto' },
+        { width: 1200, crop: 'limit' }
+      ]
     });
     res.json({ success: true, filepath: result.secure_url });
   } catch (error) {

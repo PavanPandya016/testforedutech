@@ -305,3 +305,30 @@ exports.getEventParticipants = asyncHandler(async (req, res) => {
     data: registrations
   });
 });
+
+// @desc    Combined home page data (settings + featured courses + instructors + stats)
+// @route   GET /api/admin/home-data
+// @access  Public
+exports.getHomeData = asyncHandler(async (req, res) => {
+  const SiteSettings = require('../models/SiteSettings');
+
+  const [settings, featuredCourses, instructors, courseCount, userCount] = await Promise.all([
+    SiteSettings.findOne().lean(),
+    Course.find({ featured: true }).limit(6).lean(),
+    Instructor.find().sort({ createdAt: -1 }).limit(8).lean(),
+    Course.countDocuments(),
+    User.countDocuments(),
+  ]);
+
+  res.json({
+    success: true,
+    settings: settings || {},
+    featuredCourses: featuredCourses || [],
+    instructors: instructors || [],
+    stats: {
+      courses: courseCount,
+      users: userCount,
+      instructors: instructors ? instructors.length : 0,
+    },
+  });
+});

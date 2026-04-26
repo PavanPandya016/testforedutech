@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import { Helmet } from 'react-helmet-async';
 import { m } from 'framer-motion';
 import { Link } from 'react-router-dom';
 import { 
@@ -63,9 +64,17 @@ export default function About() {
 
   return (
     <div className="bg-white min-h-screen font-outfit">
+      <Helmet>
+        <title>About Us | eduTech – Modern Learning Platform</title>
+        <meta name="description" content="Learn about eduTech's mission to make quality education accessible to everyone. Meet our expert instructors and explore 200+ courses, workshops and events." />
+        <meta property="og:title" content="About Us | eduTech" />
+        <meta property="og:description" content="Quality education for everyone. Expert-led courses, workshops, and community." />
+        <meta property="og:type" content="website" />
+        <link rel="canonical" href="https://edutech-5psu.vercel.app/about" />
+      </Helmet>
       <Header />
       
-      <main>
+      <main id="main-content">
         {/* Hero Section */}
         <section className="py-10 px-4 bg-gray-50">
           <div className="max-w-4xl mx-auto text-center">

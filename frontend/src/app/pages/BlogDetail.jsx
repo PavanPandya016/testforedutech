@@ -1,10 +1,12 @@
 import React, { useState, useEffect, useMemo } from 'react';
+import { Helmet } from 'react-helmet-async';
 import { useParams, useNavigate, Link } from 'react-router-dom';
 import { m } from 'framer-motion';
 import { Edit, Trash2, ChevronRight } from 'lucide-react';
 import Header from '../components/ui/Header';
 import Footer from '../components/ui/Footer';
 import blogService from "../services/blogService";
+import { getOptimizedImage } from '../utils/imageOptimizer';
 
 // Blog Components
 import TableOfContents from '../components/blog/TableOfContents';
@@ -148,6 +150,28 @@ export default function BlogDetail() {
 
   return (
     <div className="bg-gradient-to-b from-[#f4f8fb] to-white min-h-screen">
+      <Helmet>
+        <title>{blog.title} | eduTech Blog</title>
+        <meta name="description" content={blog.excerpt ? blog.excerpt.slice(0, 160) : 'Read this article on the eduTech blog.'} />
+        <meta property="og:title" content={`${blog.title} | eduTech Blog`} />
+        <meta property="og:description" content={blog.excerpt ? blog.excerpt.slice(0, 160) : ''} />
+        <meta property="og:image" content={blog.image} />
+        <meta property="og:type" content="article" />
+        <meta name="twitter:card" content="summary_large_image" />
+        <meta name="twitter:title" content={blog.title} />
+        <meta name="twitter:description" content={blog.excerpt ? blog.excerpt.slice(0, 160) : ''} />
+        <link rel="canonical" href={`https://edutech-5psu.vercel.app/blog/${blog.slug}`} />
+        <script type="application/ld+json">{JSON.stringify({
+          "@context": "https://schema.org",
+          "@type": "Article",
+          "headline": blog.title,
+          "description": blog.excerpt || '',
+          "image": blog.image,
+          "author": { "@type": "Person", "name": blog.author },
+          "datePublished": blog.publishedAt || blog.date,
+          "publisher": { "@type": "Organization", "name": "eduTech" }
+        })}</script>
+      </Helmet>
       <Header />
 
       <main className="max-w-[1240px] mx-auto px-4 sm:px-6 lg:px-8 py-8 sm:py-12 lg:py-16">
@@ -218,8 +242,12 @@ export default function BlogDetail() {
           className="mb-12 sm:mb-16 rounded-2xl overflow-hidden shadow-2xl ring-1 ring-gray-900/5 max-w-[1000px] mx-auto"
         >
           <img
-            src={blog.image}
+            src={getOptimizedImage(blog.image, { width: 1200, height: 600 })}
             alt={blog.title}
+            width="1200"
+            height="600"
+            fetchpriority="high"
+            decoding="async"
             className="w-full h-auto max-h-[600px] object-cover"
           />
         </m.div>

@@ -2,6 +2,7 @@ import { defineConfig } from 'vite'
 import path from 'path'
 import tailwindcss from '@tailwindcss/vite'
 import react from '@vitejs/plugin-react'
+import { compression } from 'vite-plugin-compression2'
 
 export default defineConfig({
   plugins: [
@@ -9,19 +10,29 @@ export default defineConfig({
     // Tailwind is not being actively used – do not remove them
     react(),
     tailwindcss(),
+    // Gzip for broad browser support
+    compression({ algorithm: 'gzip', exclude: [/\.(png|jpg|jpeg|webp|avif|gif|svg)$/] }),
+    // Brotli for modern browsers (smaller than gzip)
+    compression({ algorithm: 'brotliCompress', exclude: [/\.(png|jpg|jpeg|webp|avif|gif|svg)$/] }),
   ],
   resolve: {
     alias: {
       // Alias @ to the src directory
       '@': path.resolve(__dirname, './src'),
+      // Deduplicate: "motion" is an alias for framer-motion — having both installed doubles the bundle
+      'motion': 'framer-motion',
     },
   },
 
   // File types to support raw imports. Never add .css, .tsx, or .ts files to this.
   assetsInclude: ['**/*.svg', '**/*.csv'],
-  
+
   build: {
     outDir: 'dist',
+    target: 'esnext',      // Modern JS — smaller output, faster parse
+    sourcemap: false,       // Never ship sourcemaps to production
+    minify: 'esbuild',
+    chunkSizeWarningLimit: 600,
     rollupOptions: {
       output: {
         manualChunks(id) {
@@ -50,6 +61,9 @@ export default defineConfig({
             if (id.includes('@tiptap') || id.includes('prosemirror')) {
               return 'v-editor';
             }
+            if (id.includes('recharts') || id.includes('d3-')) {
+              return 'v-charts';
+            }
             return 'v-vendor';
           }
         }
@@ -57,3 +71,4 @@ export default defineConfig({
     }
   }
 })
+

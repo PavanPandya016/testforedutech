@@ -9,11 +9,14 @@ const {
   createBlogPost,
   updateBlogPost,
   deleteBlogPost,
+  getBlogFeed,
 } = require('../controllers/blogController');
 const { protect } = require('../middleware/auth');
+const { cacheMiddleware } = require('../middleware/cacheMiddleware');
 
 // Public routes
-router.get('/', getBlogPosts);
+router.get('/', cacheMiddleware(60), getBlogPosts);
+router.get('/feed', cacheMiddleware(60), getBlogFeed); // combined posts + categories
 router.get('/featured', getFeaturedPosts);
 router.get('/categories', getCategories);
 router.get('/tags', getTags);

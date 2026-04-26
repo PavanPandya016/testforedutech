@@ -15,11 +15,14 @@ export const getOptimizedImage = (url, { width, height, crop = 'fill' } = {}) =>
   // Only transform Cloudinary URLs
   if (!url.includes('res.cloudinary.com')) return url;
 
-  // Avoid double transformation if already present
-  if (url.includes('/image/upload/w_') || url.includes('/image/upload/c_')) return url;
+  const uploadIndex = url.indexOf('/upload/');
+  if (uploadIndex === -1) return url;
 
-  const parts = url.split('/upload/');
-  if (parts.length !== 2) return url;
+  // Avoid double transformation — check the segment directly after /upload/
+  const afterUpload = url.slice(uploadIndex + 8);
+  if (/^(w_|h_|c_|f_|q_|g_|e_|t_|l_|fl_)/.test(afterUpload)) return url;
+
+  const parts = [url.slice(0, uploadIndex + 8), afterUpload];
 
   const transformations = [
     width ? `w_${width}` : '',
@@ -30,5 +33,5 @@ export const getOptimizedImage = (url, { width, height, crop = 'fill' } = {}) =>
     'q_auto'  // Auto quality
   ].filter(Boolean).join(',');
 
-  return `${parts[0]}/upload/${transformations}/${parts[1]}`;
+  return `${parts[0]}${transformations}/${parts[1]}`;
 };

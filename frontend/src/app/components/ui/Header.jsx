@@ -103,7 +103,7 @@ export default function Header() {
      JSX
   ========================= */
   return (
-    <m.div
+    <div
       className="bg-white w-full shadow-sm sticky top-0 z-50"
     >
       <div className="border-b border-gray-200">
@@ -280,6 +280,6 @@ export default function Header() {
           </m.div>
         )}
       </AnimatePresence>
-    </m.div>
+    </div>
   );
 }

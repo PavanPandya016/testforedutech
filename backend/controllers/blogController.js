@@ -214,3 +214,23 @@ exports.deleteBlogPost = asyncHandler(async (req, res) => {
   await post.deleteOne();
   res.json({ success: true, message: 'Post deleted successfully' });
 });
+
+// ─── GET /api/blog/feed ──────────────────────────────────────────────────────
+// Combined endpoint: posts + categories in one round-trip, replaces two calls
+exports.getBlogFeed = asyncHandler(async (req, res) => {
+  const [posts, categoryDocs] = await Promise.all([
+    BlogPost.find({ status: 'published' })
+      .populate('author', 'firstName lastName')
+      .populate('category', 'name slug')
+      .populate('tags', 'name slug')
+      .sort({ publishedAt: -1 })
+      .lean(),
+    Category.find().sort({ name: 1 }).select('name').lean(),
+  ]);
+
+  res.json({
+    success: true,
+    posts,
+    categories: categoryDocs.map(c => c.name),
+  });
+});

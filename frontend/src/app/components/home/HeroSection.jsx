@@ -108,6 +108,7 @@ export default function HeroSection({ images, stats, subtitle }) {
           >
             <div 
               className="relative lg:absolute rounded-lg shadow-xl w-full lg:w-[50%] h-full bg-gray-100 rotate-0 lg:-rotate-5 z-10 lg:left-[5%] lg:top-0 mx-auto lg:mx-0 overflow-hidden"
+              style={{ aspectRatio: '600/400', minHeight: '240px' }}
             >
               {images?.[0] ? (
                 <m.img
