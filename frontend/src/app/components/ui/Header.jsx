@@ -117,7 +117,7 @@ export default function Header() {
               className="text-[48px] font-bold italic font-['PT_Serif',serif]"
             >
               <span className="text-[#14627a]">edu</span>
-              <span className="text-[#b35a00]">Tech</span>
+              <span className="text-[#ffc27a]">Tech</span>
             </Link>
           </m.div>
 
