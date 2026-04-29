@@ -30,6 +30,10 @@ const MenuBar = ({ editor }) => {
     fileInput.onchange = async (e) => {
       const file = e.target.files[0];
       if (file) {
+        if (!file.type.startsWith('image/')) {
+          alert('only img format is accpet');
+          return;
+        }
         try {
           const url = await blogService.uploadImage(file);
           editor.chain().focus().setImage({ src: url }).run();
@@ -223,6 +227,10 @@ export default function BlogEditor() {
   const handleHeroImageUpload = async (e) => {
     const file = e.target.files[0];
     if (file) {
+      if (!file.type.startsWith('image/')) {
+        alert('only img format is accpet');
+        return;
+      }
       setIsSaving(true);
       try {
         const url = await blogService.uploadImage(file);
@@ -271,7 +279,7 @@ export default function BlogEditor() {
       }
     } catch (err) {
       console.error('Failed to save blog:', err);
-      alert('Failed to save blog post. Please try again.');
+      alert(`Failed to save blog post: ${err.message}`);
     } finally {
       setIsSaving(false);
     }

@@ -18,6 +18,9 @@ const userSchema = new mongoose.Schema({
   isEmailVerified: { type: Boolean, default: false }
 }, { timestamps: true });
 
+userSchema.index({ role: 1 });
+userSchema.index({ isActive: 1 });
+
 userSchema.pre('save', async function(next) {
   if (!this.isModified('password')) return next();
   this.password = await bcrypt.hash(this.password, 10);

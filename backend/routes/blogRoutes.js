@@ -12,15 +12,15 @@ const {
   getBlogFeed,
 } = require('../controllers/blogController');
 const { protect } = require('../middleware/auth');
-const { cacheMiddleware } = require('../middleware/cacheMiddleware');
+const { cacheMiddleware } = require('../middleware/cache');
 
 // Public routes
-router.get('/', cacheMiddleware(60), getBlogPosts);
-router.get('/feed', cacheMiddleware(60), getBlogFeed); // combined posts + categories
-router.get('/featured', getFeaturedPosts);
-router.get('/categories', getCategories);
-router.get('/tags', getTags);
-router.get('/:slug', getBlogPost);
+router.get('/', cacheMiddleware(180), getBlogPosts);
+router.get('/feed', cacheMiddleware(180), getBlogFeed); // combined posts + categories
+router.get('/featured', cacheMiddleware(180), getFeaturedPosts);
+router.get('/categories', cacheMiddleware(300), getCategories);
+router.get('/tags', cacheMiddleware(300), getTags);
+router.get('/:slug', cacheMiddleware(180), getBlogPost);
 
 // Protected routes (require authentication)
 router.post('/', protect, createBlogPost);

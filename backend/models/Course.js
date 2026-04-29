@@ -43,6 +43,10 @@ courseSchema.pre('validate', async function (next) {
   next();
 });
 
+courseSchema.index({ category: 1 });
+courseSchema.index({ courseType: 1 });
+courseSchema.index({ isActive: 1 });
+courseSchema.index({ isFeatured: 1 });
 courseSchema.index({ title: 'text', description: 'text' });
 
 courseSchema.methods.incrementEnrollment = async function () {

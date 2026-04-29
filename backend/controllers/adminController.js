@@ -314,7 +314,7 @@ exports.getHomeData = asyncHandler(async (req, res) => {
 
   const [settings, featuredCourses, instructors, courseCount, userCount] = await Promise.all([
     SiteSettings.findOne().lean(),
-    Course.find({ featured: true }).limit(6).lean(),
+    Course.find({ isFeatured: true }).limit(6).lean(),
     Instructor.find().sort({ createdAt: -1 }).limit(8).lean(),
     Course.countDocuments(),
     User.countDocuments(),

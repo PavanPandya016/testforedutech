@@ -29,13 +29,15 @@ const PageLoader = () => (
   </div>
 );
 
-const loadFeatures = () => import('./framerFeatures').then(res => res.default);
+import framerFeatures from './framerFeatures';
 
 export default function App() {
+  console.log("App component rendering...");
   return (
     <BrowserRouter>
+
       <ScrollToTop />
-      <LazyMotion features={loadFeatures} strict>
+      <LazyMotion features={framerFeatures}>
         <Suspense fallback={<PageLoader />}>
           <Routes>
             <Route path="/" element={<Home />} />

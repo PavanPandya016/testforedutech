@@ -40,7 +40,7 @@ export default function Blog() {
     const authorName = authorObj.firstName
       ? `${authorObj.firstName} ${authorObj.lastName || ''}`.trim()
       : (typeof authorObj === 'string' ? authorObj : 'EduTech');
-    const categoryName = post.category?.name || post.category || 'General';
+    const categoryName = post.category?.name || (typeof post.category === 'string' ? post.category : 'General');
     const htmlContent = post.content || '';
     const words = htmlContent.replace(/<[^>]*>?/gm, '').split(/\s+/).filter(Boolean).length;
     return {
@@ -68,7 +68,7 @@ export default function Blog() {
         const data = await api.get('/blog/feed');
         const allBlogs = (data.posts || []).map(normalizePost);
         setBlogPosts(allBlogs);
-        setCategories(['All', ...(data.categories || [])]);
+        setCategories(['All', ...(data.categories || []).map(c => typeof c === 'object' ? c.name : c)]);
         const tagsSet = new Set();
         allBlogs.forEach(blog => (blog.tags || []).forEach(tag => tagsSet.add(tag)));
         setAvailableTags(Array.from(tagsSet));

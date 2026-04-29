@@ -1,236 +1,320 @@
 const asyncHandler = require('../middleware/asyncHandler');
 const { BlogPost, Category, Tag } = require('../models');
+const { clearCache } = require('../middleware/cache');
 
-// ─── Helpers ────────────────────────────────────────────────────────────────
+// ─── Constants ────────────────────────────────────────────────────────────────
+const MAX_LIMIT  = 50;
+const MAX_TAGS   = 10;
+
+// Reusable populate configs (avoids repeated object literals)
+const POPULATE_AUTHOR   = { path: 'author',   select: 'firstName lastName' };
+const POPULATE_CATEGORY = { path: 'category', select: 'name slug' };
+const POPULATE_TAGS     = { path: 'tags',      select: 'name slug' };
+
+// Fields returned in list views (excludes heavy content field)
+const LIST_SELECT =
+  'title slug excerpt featuredImage author category tags status isFeatured publishedAt viewCount readTime createdAt';
+
+// ─── Private helpers ──────────────────────────────────────────────────────────
+
+/** Escape regex special chars to prevent ReDoS. */
+const escapeRegex = (s) => s.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+
+/** Normalize status input to a valid enum value. */
+const normalizeStatus = (s) =>
+  typeof s === 'string' && s.toLowerCase() === 'published' ? 'published' : 'draft';
 
 /**
- * Given a category string (name or ObjectId), returns the ObjectId.
- * Creates the category if it doesn't exist.
+ * Resolve a category name/id to an ObjectId.
+ * Uses findOneAndUpdate with upsert — atomic, race-condition safe.
  */
-const resolveCategory = async (categoryInput) => {
-  if (!categoryInput) return null;
-  // Already an ObjectId string
-  if (/^[0-9a-fA-F]{24}$/.test(categoryInput)) return categoryInput;
-  // Find or create by name
-  let cat = await Category.findOne({ name: { $regex: new RegExp(`^${categoryInput}$`, 'i') } });
-  if (!cat) {
-    cat = await Category.create({ name: categoryInput });
-  }
+const resolveCategory = async (input) => {
+  if (!input) return null;
+  const str = String(input).trim();
+  if (/^[0-9a-fA-F]{24}$/.test(str)) return str;
+
+  const name = str;
+  const slug = name.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-+|-+$/g, '');
+  const cat = await Category.findOneAndUpdate(
+    { name: { $regex: new RegExp(`^${escapeRegex(name)}$`, 'i') } },
+    { $setOnInsert: { name, slug } },
+    { upsert: true, new: true, setDefaultsOnInsert: true }
+  );
   return cat._id;
 };
 
 /**
- * Given an array of tag names/ids, returns an array of ObjectIds.
- * Creates tags that don't exist.
+ * Resolve an array of tag names/ids to ObjectIds.
+ * Max MAX_TAGS tags; creates missing ones atomically.
  */
-const resolveTags = async (tagsInput) => {
-  if (!Array.isArray(tagsInput) || tagsInput.length === 0) return [];
-  const ids = await Promise.all(
-    tagsInput.map(async (t) => {
-      if (/^[0-9a-fA-F]{24}$/.test(t)) return t;
-      let tag = await Tag.findOne({ name: { $regex: new RegExp(`^${t}$`, 'i') } });
-      if (!tag) tag = await Tag.create({ name: t });
+const resolveTags = async (input) => {
+  if (!Array.isArray(input) || input.length === 0) return [];
+  return Promise.all(
+    input.slice(0, MAX_TAGS).map(async (t) => {
+      const str = String(t).trim();
+      if (/^[0-9a-fA-F]{24}$/.test(str)) return str;
+
+      const name = str;
+      const slug = name.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-+|-+$/g, '');
+      const tag = await Tag.findOneAndUpdate(
+        { name: { $regex: new RegExp(`^${escapeRegex(name)}$`, 'i') } },
+        { $setOnInsert: { name, slug } },
+        { upsert: true, new: true, setDefaultsOnInsert: true }
+      );
       return tag._id;
     })
   );
-  return ids;
 };
 
-// ─── GET /api/blog ───────────────────────────────────────────────────────────
+/** Flush all cached blog API responses. */
+const invalidateBlogCache = () => clearCache('/api/blog');
+
+// ─── GET /api/blog ────────────────────────────────────────────────────────────
 exports.getBlogPosts = asyncHandler(async (req, res) => {
-  const { search, page = 1, limit = 20 } = req.query;
-  let query = { status: 'published' };
-  if (search) query.$text = { $search: search };
+  let { search, category, tag, page = 1, limit = 10 } = req.query;
+
+  page  = Math.max(1, parseInt(page)  || 1);
+  limit = Math.min(MAX_LIMIT, Math.max(1, parseInt(limit) || 10));
   const skip = (page - 1) * limit;
 
-  const posts = await BlogPost.find(query)
-    .populate('author', 'firstName lastName')
-    .populate('category', 'name slug')
-    .populate('tags', 'name slug')
-    .sort({ publishedAt: -1 })
-    .skip(skip)
-    .limit(parseInt(limit));
+  const query = { status: 'published' };
 
-  const total = await BlogPost.countDocuments(query);
-  res.json({ success: true, posts, total, page: parseInt(page), pages: Math.ceil(total / limit) });
+  if (search) {
+    query.$text = { $search: String(search).slice(0, 200) };
+  }
+
+  // Category slug → _id
+  if (category) {
+    const cat = await Category.findOne({ slug: String(category).toLowerCase() }).select('_id').lean();
+    if (!cat) return res.json({ success: true, posts: [], total: 0, page, pages: 0 });
+    query.category = cat._id;
+  }
+
+  // Tag slug → _id
+  if (tag) {
+    const tagDoc = await Tag.findOne({ slug: String(tag).toLowerCase() }).select('_id').lean();
+    if (!tagDoc) return res.json({ success: true, posts: [], total: 0, page, pages: 0 });
+    query.tags = tagDoc._id;
+  }
+
+  const sort = search
+    ? { score: { $meta: 'textScore' }, publishedAt: -1 }
+    : { publishedAt: -1 };
+
+  const projection = search ? { score: { $meta: 'textScore' } } : {};
+
+  const [posts, total] = await Promise.all([
+    BlogPost.find(query, projection)
+      .select(LIST_SELECT)
+      .populate(POPULATE_AUTHOR)
+      .populate(POPULATE_CATEGORY)
+      .populate(POPULATE_TAGS)
+      .sort(sort)
+      .skip(skip)
+      .limit(limit)
+      .lean(),
+    BlogPost.countDocuments(query),
+  ]);
+
+  res.json({ success: true, posts, total, page, pages: Math.ceil(total / limit), limit });
 });
 
-// ─── GET /api/blog/featured ──────────────────────────────────────────────────
+// ─── GET /api/blog/featured ───────────────────────────────────────────────────
 exports.getFeaturedPosts = asyncHandler(async (req, res) => {
+  const limit = Math.min(12, Math.max(1, parseInt(req.query.limit) || 6));
+
   const posts = await BlogPost.find({ status: 'published', isFeatured: true })
-    .populate('author category')
-    .limit(6);
+    .select(LIST_SELECT)
+    .populate(POPULATE_AUTHOR)
+    .populate(POPULATE_CATEGORY)
+    .populate(POPULATE_TAGS)
+    .sort({ publishedAt: -1 })
+    .limit(limit)
+    .lean();
+
   res.json({ success: true, posts });
 });
 
-// ─── GET /api/blog/categories ────────────────────────────────────────────────
+// ─── GET /api/blog/categories ─────────────────────────────────────────────────
 exports.getCategories = asyncHandler(async (req, res) => {
-  const categories = await Category.find().sort({ name: 1 });
-  res.json({ success: true, categories });
+  const [categories, postCounts] = await Promise.all([
+    Category.find().select('name slug description').sort({ name: 1 }).lean(),
+    BlogPost.aggregate([
+      { $match: { status: 'published' } },
+      { $group: { _id: '$category', count: { $sum: 1 } } }
+    ])
+  ]);
+
+  const countMap = postCounts.reduce((acc, curr) => {
+    if (curr._id) acc[curr._id.toString()] = curr.count;
+    return acc;
+  }, {});
+
+  const enriched = categories.map(cat => ({
+    ...cat,
+    postCount: countMap[cat._id.toString()] || 0
+  }));
+
+  res.json({ success: true, categories: enriched });
 });
 
-// ─── GET /api/blog/tags ──────────────────────────────────────────────────────
+// ─── GET /api/blog/tags ───────────────────────────────────────────────────────
 exports.getTags = asyncHandler(async (req, res) => {
-  const tags = await Tag.find().sort({ name: 1 });
+  const tags = await Tag.find().select('name slug').sort({ name: 1 }).lean();
   res.json({ success: true, tags });
 });
 
-// ─── GET /api/blog/:slug ─────────────────────────────────────────────────────
+// ─── GET /api/blog/feed ───────────────────────────────────────────────────────
+exports.getBlogFeed = asyncHandler(async (req, res) => {
+  const limit = Math.min(20, Math.max(1, parseInt(req.query.limit) || 10));
+
+  const [posts, categories, tags] = await Promise.all([
+    BlogPost.find({ status: 'published' })
+      .select(LIST_SELECT)
+      .populate(POPULATE_AUTHOR)
+      .populate(POPULATE_CATEGORY)
+      .populate(POPULATE_TAGS)
+      .sort({ publishedAt: -1 })
+      .limit(limit)
+      .lean(),
+    Category.find().select('name slug').sort({ name: 1 }).lean(),
+    Tag.find().select('name slug').sort({ name: 1 }).limit(50).lean(),
+  ]);
+
+  res.json({ success: true, posts, categories, tags });
+});
+
+// ─── GET /api/blog/:slug ──────────────────────────────────────────────────────
 exports.getBlogPost = asyncHandler(async (req, res) => {
   const { slug } = req.params;
 
-  let query = {};
-  if (slug.match(/^[0-9a-fA-F]{24}$/)) {
-    query.$or = [{ slug }, { _id: slug }];
-  } else {
-    query.slug = slug;
-  }
-
-  const post = await BlogPost.findOne(query)
-    .populate('author', 'firstName lastName')
-    .populate('category', 'name slug')
-    .populate('tags', 'name slug');
+  const post = await BlogPost.findBySlugOrId(slug)
+    .populate(POPULATE_AUTHOR)
+    .populate(POPULATE_CATEGORY)
+    .populate(POPULATE_TAGS)
+    .lean();
 
   if (!post) {
     return res.status(404).json({ success: false, error: 'Post not found' });
   }
 
-  // Only increment view count for published posts
+  // Draft posts visible only to author or admin
+  if (post.status === 'draft') {
+    const userId   = req.user?._id?.toString();
+    const isOwner  = userId && post.author._id.toString() === userId;
+    const isAdmin  = req.user?.role === 'admin';
+    if (!isOwner && !isAdmin) {
+      return res.status(404).json({ success: false, error: 'Post not found' });
+    }
+  }
+
+  // Fire-and-forget view count increment — does not block response
   if (post.status === 'published') {
-    post.viewCount += 1;
-    await post.save();
+    BlogPost.findByIdAndUpdate(post._id, { $inc: { viewCount: 1 } }).exec();
+    post.viewCount = (post.viewCount || 0) + 1;
   }
 
   res.json({ success: true, post });
 });
 
-// ─── POST /api/blog ──────────────────────────────────────────────────────────
+// ─── POST /api/blog ───────────────────────────────────────────────────────────
 exports.createBlogPost = asyncHandler(async (req, res) => {
-  const { title, content, excerpt, featuredImage, category, tags, status } = req.body;
+  const { title, content, excerpt, featuredImage, category, tags, status, isFeatured } = req.body;
 
-  if (!title || !content) {
-    return res.status(400).json({ success: false, error: 'Title and content are required' });
-  }
+  if (!title?.trim())   return res.status(400).json({ success: false, error: 'Title is required' });
+  if (!content?.trim()) return res.status(400).json({ success: false, error: 'Content is required' });
+  if (title.trim().length < 5)
+    return res.status(400).json({ success: false, error: 'Title must be at least 5 characters' });
 
-  const categoryId = await resolveCategory(category);
-  const tagIds = await resolveTags(tags);
-
-  const postStatus = status === 'Published' || status === 'published' ? 'published' : 'draft';
-
-  const post = await BlogPost.create({
-    title,
-    content,
-    excerpt,
-    featuredImage,
-    author: req.user._id,
-    category: categoryId,
-    tags: tagIds,
-    status: postStatus,
-    publishedAt: postStatus === 'published' ? new Date() : undefined,
-  });
-
-  const populated = await post.populate([
-    { path: 'author', select: 'firstName lastName' },
-    { path: 'category', select: 'name slug' },
-    { path: 'tags', select: 'name slug' },
+  const [categoryId, tagIds] = await Promise.all([
+    resolveCategory(category),
+    resolveTags(tags),
   ]);
 
-  res.status(201).json({ success: true, post: populated });
+  const postStatus = normalizeStatus(status);
+  // Only admins can mark posts as featured
+  const featured = req.user.role === 'admin' ? !!isFeatured : false;
+
+  const post = await BlogPost.create({
+    title:        title.trim(),
+    content,
+    excerpt:      excerpt?.trim(),
+    featuredImage: featuredImage?.trim(),
+    isFeatured:   featured,
+    author:       req.user._id,
+    category:     categoryId,
+    tags:         tagIds,
+    status:       postStatus,
+    publishedAt:  postStatus === 'published' ? new Date() : undefined,
+  });
+
+  await post.populate([POPULATE_AUTHOR, POPULATE_CATEGORY, POPULATE_TAGS]);
+
+  invalidateBlogCache();
+  res.status(201).json({ success: true, post });
 });
 
-// ─── PUT /api/blog/:slug ─────────────────────────────────────────────────────
+// ─── PUT /api/blog/:slug ──────────────────────────────────────────────────────
 exports.updateBlogPost = asyncHandler(async (req, res) => {
   const { slug } = req.params;
-  const { title, content, excerpt, featuredImage, category, tags, status } = req.body;
 
-  let query = {};
-  if (slug.match(/^[0-9a-fA-F]{24}$/)) {
-    query.$or = [{ slug }, { _id: slug }];
-  } else {
-    query.slug = slug;
-  }
+  const post = await BlogPost.findBySlugOrId(slug);
+  if (!post) return res.status(404).json({ success: false, error: 'Post not found' });
 
-  const post = await BlogPost.findOne(query);
-  if (!post) {
-    return res.status(404).json({ success: false, error: 'Post not found' });
-  }
+  const isOwner = post.author.toString() === req.user._id.toString();
+  const isAdmin = req.user.role === 'admin';
 
-  // Only the author or an admin can update
-  if (post.author.toString() !== req.user._id.toString() && req.user.role !== 'admin') {
+  if (!isOwner && !isAdmin) {
     return res.status(403).json({ success: false, error: 'Not authorized to edit this post' });
   }
 
-  if (title) post.title = title;
-  if (content !== undefined) post.content = content;
-  if (excerpt !== undefined) post.excerpt = excerpt;
-  if (featuredImage !== undefined) post.featuredImage = featuredImage;
+  const { title, content, excerpt, featuredImage, category, tags, status, isFeatured } = req.body;
 
-  if (category !== undefined) {
-    post.category = await resolveCategory(category);
+  if (title !== undefined) {
+    if (!title.trim() || title.trim().length < 5)
+      return res.status(400).json({ success: false, error: 'Title must be at least 5 characters' });
+    post.title = title.trim();
   }
-  if (tags !== undefined) {
-    post.tags = await resolveTags(tags);
+  if (content !== undefined) {
+    if (!content.trim())
+      return res.status(400).json({ success: false, error: 'Content cannot be empty' });
+    post.content = content;
   }
+  if (excerpt      !== undefined) post.excerpt       = excerpt?.trim()       || '';
+  if (featuredImage !== undefined) post.featuredImage = featuredImage?.trim() || '';
+  if (isFeatured   !== undefined && isAdmin) post.isFeatured = !!isFeatured;
+
+  if (category !== undefined) post.category = await resolveCategory(category);
+  if (tags     !== undefined) post.tags      = await resolveTags(tags);
+
   if (status !== undefined) {
-    const newStatus = status === 'Published' || status === 'published' ? 'published' : 'draft';
-    if (newStatus === 'published' && post.status !== 'published') {
-      post.publishedAt = new Date();
-    }
+    const newStatus = normalizeStatus(status);
+    if (newStatus === 'published' && post.status !== 'published') post.publishedAt = new Date();
     post.status = newStatus;
   }
 
   await post.save();
+  await post.populate([POPULATE_AUTHOR, POPULATE_CATEGORY, POPULATE_TAGS]);
 
-  const populated = await post.populate([
-    { path: 'author', select: 'firstName lastName' },
-    { path: 'category', select: 'name slug' },
-    { path: 'tags', select: 'name slug' },
-  ]);
-
-  res.json({ success: true, post: populated });
+  invalidateBlogCache();
+  res.json({ success: true, post });
 });
 
-// ─── DELETE /api/blog/:slug ──────────────────────────────────────────────────
+// ─── DELETE /api/blog/:slug ───────────────────────────────────────────────────
 exports.deleteBlogPost = asyncHandler(async (req, res) => {
   const { slug } = req.params;
 
-  let query = {};
-  if (slug.match(/^[0-9a-fA-F]{24}$/)) {
-    query.$or = [{ slug }, { _id: slug }];
-  } else {
-    query.slug = slug;
-  }
+  const post = await BlogPost.findBySlugOrId(slug);
+  if (!post) return res.status(404).json({ success: false, error: 'Post not found' });
 
-  const post = await BlogPost.findOne(query);
-  if (!post) {
-    return res.status(404).json({ success: false, error: 'Post not found' });
-  }
+  const isOwner = post.author.toString() === req.user._id.toString();
+  const isAdmin = req.user.role === 'admin';
 
-  // Only the author or an admin can delete
-  if (post.author.toString() !== req.user._id.toString() && req.user.role !== 'admin') {
+  if (!isOwner && !isAdmin) {
     return res.status(403).json({ success: false, error: 'Not authorized to delete this post' });
   }
 
   await post.deleteOne();
+  invalidateBlogCache();
   res.json({ success: true, message: 'Post deleted successfully' });
-});
-
-// ─── GET /api/blog/feed ──────────────────────────────────────────────────────
-// Combined endpoint: posts + categories in one round-trip, replaces two calls
-exports.getBlogFeed = asyncHandler(async (req, res) => {
-  const [posts, categoryDocs] = await Promise.all([
-    BlogPost.find({ status: 'published' })
-      .populate('author', 'firstName lastName')
-      .populate('category', 'name slug')
-      .populate('tags', 'name slug')
-      .sort({ publishedAt: -1 })
-      .lean(),
-    Category.find().sort({ name: 1 }).select('name').lean(),
-  ]);
-
-  res.json({
-    success: true,
-    posts,
-    categories: categoryDocs.map(c => c.name),
-  });
 });

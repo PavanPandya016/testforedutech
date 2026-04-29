@@ -1,22 +1,56 @@
-const { ActivityLog } = require('../models');
+const winston = require('winston');
+const path = require('path');
 
-/**
- * Utility function to log platform activities.
- * @param {string} userId - ID of the user performing the action or related to the action.
- * @param {string} action - Type of action (user_joined, course_added, etc.).
- * @param {string} details - Human-readable details (e.g. "Course: Web Development").
- */
-const logActivity = async (userId, action, details) => {
+const logger = winston.createLogger({
+  level: 'info',
+  format: winston.format.combine(
+    winston.format.timestamp({ format: 'YYYY-MM-DD HH:mm:ss' }),
+    winston.format.errors({ stack: true }),
+    winston.format.splat(),
+    winston.format.json()
+  ),
+  defaultMeta: { service: 'edutech-backend' },
+  transports: [
+    // Write all logs with importance level of `error` or less to `error.log`
+    new winston.transports.File({ 
+      filename: path.join(__dirname, '../logs/error.log'), 
+      level: 'error',
+      maxsize: 5242880, // 5MB
+      maxFiles: 5,
+    }),
+    // Write all logs with importance level of `info` or less to `combined.log`
+    new winston.transports.File({ 
+      filename: path.join(__dirname, '../logs/combined.log'),
+      maxsize: 5242880, // 5MB
+      maxFiles: 5,
+    }),
+  ],
+});
+
+// Helper to log platform activity to the database
+logger.logActivity = async (userId, action, details) => {
   try {
+    const ActivityLog = require('../models/ActivityLog');
     await ActivityLog.create({
       user: userId,
       action,
-      details
+      details,
+      timestamp: new Date()
     });
-    console.log(`[Activity Log] ${action}: ${details}`);
-  } catch (error) {
-    console.error('Failed to log activity:', error);
+    logger.info(`Activity logged: ${action} by user ${userId}`);
+  } catch (err) {
+    logger.error('Failed to log activity to database:', err);
   }
 };
 
-module.exports = { logActivity };
+// If we're not in production then log to the `console` with simple format
+if (process.env.NODE_ENV !== 'production') {
+  logger.add(new winston.transports.Console({
+    format: winston.format.combine(
+      winston.format.colorize(),
+      winston.format.simple()
+    ),
+  }));
+}
+
+module.exports = logger;

@@ -2,7 +2,7 @@ const express = require('express');
 const router = express.Router();
 const { protect } = require('../middleware/auth');
 const { getEvents, getEvent, registerEvent, getMyEvents, getFeaturedEvents } = require('../controllers/eventController');
-const { cacheMiddleware } = require('../middleware/cacheMiddleware');
+const { cacheMiddleware } = require('../middleware/cache');
 
 router.get('/', cacheMiddleware(120), getEvents);
 router.get('/featured', cacheMiddleware(120), getFeaturedEvents);

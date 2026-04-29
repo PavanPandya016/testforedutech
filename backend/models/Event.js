@@ -16,6 +16,10 @@ const eventSchema = new mongoose.Schema({
   isFeatured: { type: Boolean, default: false }
 }, { timestamps: true, toJSON: { virtuals: true } });
 
+eventSchema.index({ startDateTime: 1 });
+eventSchema.index({ isActive: 1 });
+eventSchema.index({ isFeatured: 1 });
+
 eventSchema.pre('save', function(next) {
   if (this.isModified('title')) {
     this.slug = this.title.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-+|-+$/g, '');
